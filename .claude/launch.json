@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "prototype",
+      "runtimeExecutable": "/Users/mehul.k/.nvm/versions/node/v24.12.0/bin/node",
+      "runtimeArgs": ["node_modules/.bin/vite", "--host"],
+      "port": 5173,
+      "cwd": "prototype"
+    },
+    {
+      "name": "auth-messages",
+      "runtimeExecutable": "/Users/mehul.k/.nvm/versions/node/v24.12.0/bin/node",
+      "runtimeArgs": ["node_modules/.bin/vite", "--port", "5174", "--host"],
+      "port": 5174,
+      "cwd": "prototype-auth-messages"
+    }
+  ]
+}
