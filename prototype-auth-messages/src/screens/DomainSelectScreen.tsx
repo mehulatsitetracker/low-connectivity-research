@@ -1,24 +1,82 @@
 import React from 'react';
 import type { ScreenProps } from '../types';
 import { DOMAIN_SELECT } from '../data/messages';
+import { colors, radii, typography, spacing } from '../theme';
 
 const MOCK_ACCOUNTS = [
-  { id: '1', name: 'Production - Acme Corp', domain: 'acme.my.sitetracker.com' },
-  { id: '2', name: 'Sandbox - Acme Corp', domain: 'acme--sandbox.my.sitetracker.com' },
-  { id: '3', name: 'Training Environment', domain: 'acme--training.my.sitetracker.com' },
+  {
+    id: '1',
+    name: 'SITETR\u25B2CKER',
+    domain: 'st-r50-edu.my.salesforce.com',
+    email: 'mehul.k@sitetracker.r50.pu',
+    loggedIn: true,
+    isSitetracker: true,
+  },
+  {
+    id: '2',
+    name: '',
+    domain: 'st-pre-prod-52-pi-patch-lu.my.salesforce.com',
+    email: 'qa@sitetracker.com.preprod.patch.lu',
+    loggedIn: false,
+    isSitetracker: false,
+  },
 ];
+
+const GearIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+    <path
+      d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"
+      stroke={colors.textTertiary}
+      strokeWidth="1.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M16.2 12.5a1.4 1.4 0 00.3 1.5l.05.05a1.7 1.7 0 11-2.4 2.4l-.05-.05a1.4 1.4 0 00-1.5-.3 1.4 1.4 0 00-.85 1.28v.14a1.7 1.7 0 11-3.4 0v-.07A1.4 1.4 0 007.5 16.2a1.4 1.4 0 00-1.5.3l-.05.05a1.7 1.7 0 11-2.4-2.4l.05-.05a1.4 1.4 0 00.3-1.5 1.4 1.4 0 00-1.28-.85H2.5a1.7 1.7 0 110-3.4h.07A1.4 1.4 0 003.8 7.5a1.4 1.4 0 00-.3-1.5l-.05-.05a1.7 1.7 0 112.4-2.4l.05.05a1.4 1.4 0 001.5.3h.07a1.4 1.4 0 00.85-1.28V2.5a1.7 1.7 0 013.4 0v.07a1.4 1.4 0 00.85 1.28 1.4 1.4 0 001.5-.3l.05-.05a1.7 1.7 0 112.4 2.4l-.05.05a1.4 1.4 0 00-.3 1.5v.07a1.4 1.4 0 001.28.85h.14a1.7 1.7 0 110 3.4h-.07a1.4 1.4 0 00-1.28.85z"
+      stroke={colors.textTertiary}
+      strokeWidth="1.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const BackChevron = () => (
+  <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
+    <path d="M9 1L1 9L9 17" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 const ChevronRight = () => (
   <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
-    <path d="M1 1L7 7L1 13" stroke="#C7C7CC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M1 1L7 7L1 13" stroke={colors.textTertiary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const MoreDots = ({ color = '#fff' }: { color?: string }) => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+    <circle cx="10" cy="4" r="1.5" fill={color} />
+    <circle cx="10" cy="10" r="1.5" fill={color} />
+    <circle cx="10" cy="16" r="1.5" fill={color} />
+  </svg>
+);
+
+const SalesforceCloudIcon = () => (
+  <svg width="24" height="18" viewBox="0 0 24 18" fill="none">
+    <path
+      d="M8.5 3.5a4.5 4.5 0 014.2 2.9A3.5 3.5 0 0120 9.5a3.5 3.5 0 01-3.5 3.5H6a4 4 0 01-.8-7.9A4.5 4.5 0 018.5 3.5z"
+      fill="#1798C1"
+      stroke="#1798C1"
+      strokeWidth="0.5"
+    />
   </svg>
 );
 
 const InfoIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <circle cx="8" cy="8" r="7" stroke="#007AFF" strokeWidth="1.5" />
-    <path d="M8 7V11" stroke="#007AFF" strokeWidth="1.5" strokeLinecap="round" />
-    <circle cx="8" cy="5" r="0.75" fill="#007AFF" />
+    <circle cx="8" cy="8" r="7" stroke={colors.offlineText} strokeWidth="1.5" />
+    <path d="M8 7V11" stroke={colors.offlineText} strokeWidth="1.5" strokeLinecap="round" />
+    <circle cx="8" cy="5" r="0.75" fill={colors.offlineText} />
   </svg>
 );
 
@@ -34,8 +92,8 @@ export const DomainSelectScreen: React.FC<ScreenProps> = ({ scenario, copyMode }
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        background: '#fff',
-        fontFamily: '-apple-system, SF Pro, system-ui, sans-serif',
+        background: colors.background,
+        fontFamily: typography.fontFamily,
       }}
     >
       {/* Offline banner */}
@@ -45,25 +103,35 @@ export const DomainSelectScreen: React.FC<ScreenProps> = ({ scenario, copyMode }
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            padding: '12px 16px',
-            background: '#E8F0FE',
-            borderBottom: '1px solid #D2E3FC',
+            padding: '10px 16px',
+            background: colors.offlineBg,
           }}
         >
           <InfoIcon />
-          <span style={{ fontSize: 13, color: '#22333B', lineHeight: 1.4 }}>
+          <span style={{ fontSize: 13, color: colors.offlineText, lineHeight: 1.4 }}>
             {copy.offlineBanner}
           </span>
         </div>
       )}
 
-      {/* Header area */}
+      {/* Header area with logo */}
       <div style={{ padding: '40px 24px 16px' }}>
+        <div
+          style={{
+            fontSize: typography.logo.fontSize,
+            fontWeight: typography.logo.fontWeight,
+            letterSpacing: typography.logo.letterSpacing,
+            color: colors.textPrimary,
+            marginBottom: 16,
+          }}
+        >
+          {typography.logo.text}
+        </div>
         <h1
           style={{
             fontSize: 22,
             fontWeight: 700,
-            color: '#22333B',
+            color: colors.textPrimary,
             margin: 0,
             lineHeight: 1.3,
           }}
@@ -72,7 +140,7 @@ export const DomainSelectScreen: React.FC<ScreenProps> = ({ scenario, copyMode }
         </h1>
 
         {copyMode === 'proposed' && copy.helpText && (
-          <p style={{ fontSize: 14, color: '#666', margin: '8px 0 0', lineHeight: 1.5 }}>
+          <p style={{ fontSize: 14, color: colors.textSecondary, margin: '8px 0 0', lineHeight: 1.5 }}>
             {copy.helpText}
           </p>
         )}
@@ -80,30 +148,70 @@ export const DomainSelectScreen: React.FC<ScreenProps> = ({ scenario, copyMode }
 
       {/* Account list */}
       {showAccounts ? (
-        <div style={{ flex: 1, padding: '0 24px' }}>
-          {MOCK_ACCOUNTS.map((account, i) => (
-            <div
-              key={account.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '16px 0',
-                borderBottom: i < MOCK_ACCOUNTS.length - 1 ? '1px solid #E5E5EA' : 'none',
-                cursor: 'pointer',
-              }}
-            >
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 500, color: '#22333B' }}>
-                  {account.name}
+        <div style={{ flex: 1, overflow: 'auto' }}>
+          <div style={{ padding: '0 16px' }}>
+            {MOCK_ACCOUNTS.map((account) => (
+              <div
+                key={account.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: colors.surface,
+                  border: `1px solid ${colors.border}`,
+                  borderLeft: `3px solid ${colors.brandTeal}`,
+                  borderRadius: radii.standard,
+                  padding: spacing.cardPadding,
+                  marginBottom: 8,
+                  cursor: 'pointer',
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {/* Logo / icon row */}
+                  <div style={{ marginBottom: 4 }}>
+                    {account.isSitetracker ? (
+                      <span
+                        style={{
+                          fontSize: 13,
+                          fontWeight: typography.logo.fontWeight,
+                          letterSpacing: 2,
+                          color: colors.textPrimary,
+                        }}
+                      >
+                        {typography.logo.text}
+                      </span>
+                    ) : (
+                      <SalesforceCloudIcon />
+                    )}
+                  </div>
+                  <div style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 2 }}>
+                    {account.domain}
+                  </div>
+                  <div style={{ fontSize: 13, color: colors.textTertiary }}>
+                    {account.email}
+                  </div>
+                  {!account.loggedIn && (
+                    <div
+                      style={{
+                        display: 'inline-block',
+                        marginTop: 6,
+                        padding: '2px 8px',
+                        background: '#f5f5f5',
+                        borderRadius: 3,
+                        fontSize: 12,
+                        color: colors.textSecondary,
+                      }}
+                    >
+                      Logged out.
+                    </div>
+                  )}
                 </div>
-                <div style={{ fontSize: 13, color: '#999', marginTop: 2 }}>
-                  {account.domain}
+                <div style={{ cursor: 'pointer', padding: 4, marginLeft: 8 }}>
+                  <GearIcon />
                 </div>
               </div>
-              <ChevronRight />
-            </div>
-          ))}
+            ))}
+          </div>
+
         </div>
       ) : (
         <div
@@ -118,11 +226,11 @@ export const DomainSelectScreen: React.FC<ScreenProps> = ({ scenario, copyMode }
         >
           <div style={{ fontSize: 40, marginBottom: 16 }}>
             <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-              <path d="M24 4C13 4 4 13 4 24s9 20 20 20 20-9 20-20S35 4 24 4z" stroke="#C7C7CC" strokeWidth="2" />
-              <path d="M16 24h16M24 16v16" stroke="#C7C7CC" strokeWidth="2" strokeLinecap="round" />
+              <path d="M24 4C13 4 4 13 4 24s9 20 20 20 20-9 20-20S35 4 24 4z" stroke={colors.border} strokeWidth="2" />
+              <path d="M16 24h16M24 16v16" stroke={colors.border} strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
-          <p style={{ fontSize: 15, color: '#666', textAlign: 'center', lineHeight: 1.5 }}>
+          <p style={{ fontSize: 15, color: colors.textSecondary, textAlign: 'center', lineHeight: 1.5 }}>
             {copyMode === 'proposed'
               ? DOMAIN_SELECT.proposed.offlineNoAccounts
               : 'No accounts available.'}
@@ -130,14 +238,23 @@ export const DomainSelectScreen: React.FC<ScreenProps> = ({ scenario, copyMode }
         </div>
       )}
 
-      {/* Admin link - proposed only */}
-      {copyMode === 'proposed' && copy.adminLink && showAccounts && (
-        <div style={{ padding: '16px 24px 32px', textAlign: 'center' }}>
-          <span style={{ fontSize: 14, color: '#007AFF', cursor: 'pointer' }}>
-            {copy.adminLink}
+      {/* Bottom links */}
+      <div style={{ padding: '24px 24px 40px', textAlign: 'center' }}>
+        <p style={{ fontSize: 14, color: colors.textSecondary, margin: '0 0 8px' }}>
+          Don't see an account?
+        </p>
+        <p style={{ margin: '0 0 6px' }}>
+          <span style={{ fontSize: 15, fontWeight: 500, color: colors.brandTeal, cursor: 'pointer', textDecoration: 'underline' }}>
+            Connect to another account
           </span>
-        </div>
-      )}
+        </p>
+        <p style={{ fontSize: 14, color: colors.textSecondary, margin: '0 0 6px' }}>or</p>
+        <p style={{ margin: 0 }}>
+          <span style={{ fontSize: 15, fontWeight: 500, color: colors.brandTeal, cursor: 'pointer', textDecoration: 'underline' }}>
+            Log in with MobilePlus
+          </span>
+        </p>
+      </div>
     </div>
   );
 };

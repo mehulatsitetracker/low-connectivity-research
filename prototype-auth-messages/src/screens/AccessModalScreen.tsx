@@ -1,8 +1,9 @@
 import React from 'react';
 import type { ScreenProps } from '../types';
 import { ACCESS_MODAL } from '../data/messages';
+import { colors, radii, typography } from '../theme';
 
-const LockIcon = ({ color = '#007AFF' }: { color?: string }) => (
+const LockIcon = ({ color = colors.brandTeal }: { color?: string }) => (
   <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
     <circle cx="40" cy="40" r="38" stroke={color} strokeWidth="3" fill={`${color}15`} />
     <rect x="28" y="38" width="24" height="18" rx="3" fill={color} />
@@ -22,12 +23,12 @@ const WarningIcon = () => (
 
 const SignalIcon = () => (
   <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-    <circle cx="40" cy="40" r="38" stroke="#E53935" strokeWidth="3" fill="#E5393515" />
-    <path d="M28 52V46" stroke="#E53935" strokeWidth="4" strokeLinecap="round" />
-    <path d="M36 52V40" stroke="#E53935" strokeWidth="4" strokeLinecap="round" />
-    <path d="M44 52V34" stroke="#E53935" strokeWidth="4" strokeLinecap="round" />
-    <path d="M52 52V28" stroke="#E53935" strokeWidth="4" strokeLinecap="round" />
-    <line x1="26" y1="30" x2="54" y2="30" stroke="#E53935" strokeWidth="2.5" strokeLinecap="round" transform="rotate(45 40 30)" />
+    <circle cx="40" cy="40" r="38" stroke={colors.error} strokeWidth="3" fill="#E5393515" />
+    <path d="M28 52V46" stroke={colors.error} strokeWidth="4" strokeLinecap="round" />
+    <path d="M36 52V40" stroke={colors.error} strokeWidth="4" strokeLinecap="round" />
+    <path d="M44 52V34" stroke={colors.error} strokeWidth="4" strokeLinecap="round" />
+    <path d="M52 52V28" stroke={colors.error} strokeWidth="4" strokeLinecap="round" />
+    <line x1="26" y1="30" x2="54" y2="30" stroke={colors.error} strokeWidth="2.5" strokeLinecap="round" transform="rotate(45 40 30)" />
   </svg>
 );
 
@@ -48,29 +49,19 @@ const getIcon = (scenario: string) => {
 const getMessage = (scenario: string, copyMode: 'current' | 'proposed'): string => {
   if (copyMode === 'current') {
     switch (scenario) {
-      case 'permission-error':
-        return ACCESS_MODAL.current.namespace;
-      case 'api-disabled':
-        return ACCESS_MODAL.current.apiDisabled;
-      case 'server-error':
-        return ACCESS_MODAL.current.serverError;
-      case 'network-error':
-        return ACCESS_MODAL.current.networkError;
-      default:
-        return ACCESS_MODAL.current.serverError;
+      case 'permission-error': return ACCESS_MODAL.current.namespace;
+      case 'api-disabled': return ACCESS_MODAL.current.apiDisabled;
+      case 'server-error': return ACCESS_MODAL.current.serverError;
+      case 'network-error': return ACCESS_MODAL.current.networkError;
+      default: return ACCESS_MODAL.current.serverError;
     }
   }
   switch (scenario) {
-    case 'permission-error':
-      return ACCESS_MODAL.proposed.appAccess;
-    case 'api-disabled':
-      return ACCESS_MODAL.proposed.apiDisabled;
-    case 'server-error':
-      return ACCESS_MODAL.proposed.serverError;
-    case 'network-error':
-      return ACCESS_MODAL.proposed.networkError;
-    default:
-      return ACCESS_MODAL.proposed.serverError;
+    case 'permission-error': return ACCESS_MODAL.proposed.appAccess;
+    case 'api-disabled': return ACCESS_MODAL.proposed.apiDisabled;
+    case 'server-error': return ACCESS_MODAL.proposed.serverError;
+    case 'network-error': return ACCESS_MODAL.proposed.networkError;
+    default: return ACCESS_MODAL.proposed.serverError;
   }
 };
 
@@ -86,13 +77,13 @@ export const AccessModalScreen: React.FC<ScreenProps> = ({ scenario, copyMode })
         justifyContent: 'center',
         height: '100%',
         background: '#00000066',
-        fontFamily: '-apple-system, SF Pro, system-ui, sans-serif',
+        fontFamily: typography.fontFamily,
       }}
     >
       <div
         style={{
-          background: '#fff',
-          borderRadius: 12,
+          background: colors.surface,
+          borderRadius: radii.standard,
           padding: 24,
           maxWidth: 320,
           width: '85%',
@@ -108,7 +99,7 @@ export const AccessModalScreen: React.FC<ScreenProps> = ({ scenario, copyMode })
           style={{
             fontSize: 16,
             lineHeight: 1.6,
-            color: '#22333B',
+            color: colors.textPrimary,
             margin: '0 0 20px 0',
             whiteSpace: 'pre-line',
           }}
@@ -119,46 +110,32 @@ export const AccessModalScreen: React.FC<ScreenProps> = ({ scenario, copyMode })
         {copyMode === 'proposed' && isPermissionScenario(scenario) && (
           <div
             style={{
-              background: '#f5f5f5',
-              borderRadius: 8,
+              background: colors.background,
+              borderRadius: radii.standard,
               padding: 12,
               width: '100%',
               marginBottom: 20,
               textAlign: 'left',
             }}
           >
-            <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>
+            <div style={{ fontSize: 12, color: colors.textSecondary, marginBottom: 6 }}>
               Show this to your admin:
             </div>
-            <div
-              style={{
-                fontSize: 14,
-                color: '#22333B',
-                fontStyle: 'italic',
-                lineHeight: 1.5,
-              }}
-            >
+            <div style={{ fontSize: 14, color: colors.textPrimary, fontStyle: 'italic', lineHeight: 1.5 }}>
               "This user needs the Sitetracker Mobile permission set enabled in Salesforce Setup."
             </div>
           </div>
         )}
 
-        <div
-          style={{
-            display: 'flex',
-            gap: 10,
-            width: '100%',
-            flexDirection: 'column',
-          }}
-        >
+        <div style={{ display: 'flex', gap: 10, width: '100%', flexDirection: 'column' }}>
           {copyMode === 'current' ? (
             <button
               style={{
                 padding: '12px 24px',
-                borderRadius: 8,
+                borderRadius: radii.button,
                 border: 'none',
-                background: '#e0e0e0',
-                color: '#22333B',
+                background: colors.border,
+                color: colors.textPrimary,
                 fontSize: 16,
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -171,9 +148,9 @@ export const AccessModalScreen: React.FC<ScreenProps> = ({ scenario, copyMode })
               <button
                 style={{
                   padding: '12px 24px',
-                  borderRadius: 8,
+                  borderRadius: radii.button,
                   border: 'none',
-                  background: '#007AFF',
+                  background: colors.brandTeal,
                   color: '#fff',
                   fontSize: 16,
                   fontWeight: 600,
@@ -185,10 +162,10 @@ export const AccessModalScreen: React.FC<ScreenProps> = ({ scenario, copyMode })
               <button
                 style={{
                   padding: '12px 24px',
-                  borderRadius: 8,
+                  borderRadius: radii.button,
                   border: 'none',
-                  background: '#e0e0e0',
-                  color: '#22333B',
+                  background: colors.border,
+                  color: colors.textPrimary,
                   fontSize: 16,
                   fontWeight: 600,
                   cursor: 'pointer',

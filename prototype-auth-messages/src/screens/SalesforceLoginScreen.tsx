@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import type { ScreenProps } from '../types';
 import { SALESFORCE_LOGIN } from '../data/messages';
+import { colors, radii, typography } from '../theme';
 
 const spinKeyframes = `@keyframes spin { to { transform: rotate(360deg) } }`;
 
-const Spinner: React.FC<{ size?: number; color?: string }> = ({ size = 32, color = '#007AFF' }) => (
+const Spinner: React.FC<{ size?: number; color?: string }> = ({ size = 32, color = colors.brandTeal }) => (
   <div
     style={{
       width: size,
       height: size,
       borderRadius: '50%',
-      border: '3px solid #e0e0e0',
+      border: `3px solid ${colors.border}`,
       borderTopColor: color,
       animation: 'spin 0.8s linear infinite',
     }}
@@ -18,8 +19,8 @@ const Spinner: React.FC<{ size?: number; color?: string }> = ({ size = 32, color
 );
 
 const BackArrow = () => (
-  <svg width="12" height="20" viewBox="0 0 12 20" fill="none">
-    <path d="M10 2L2 10L10 18" stroke="#007AFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+  <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
+    <path d="M9 1L1 9L9 17" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -30,7 +31,7 @@ const MockLoginForm: React.FC = () => (
         style={{
           fontSize: 20,
           fontWeight: 600,
-          color: '#22333B',
+          color: colors.textPrimary,
           marginBottom: 4,
         }}
       >
@@ -39,20 +40,20 @@ const MockLoginForm: React.FC = () => (
     </div>
 
     <div style={{ marginBottom: 20 }}>
-      <label style={{ fontSize: 13, color: '#666', display: 'block', marginBottom: 6 }}>
+      <label style={{ fontSize: 13, color: colors.textSecondary, display: 'block', marginBottom: 6 }}>
         Username
       </label>
       <div
         style={{
           height: 44,
-          border: '1px solid #D1D1D6',
-          borderRadius: 8,
+          border: `1px solid ${colors.border}`,
+          borderRadius: radii.standard,
           background: '#F9F9F9',
           padding: '0 12px',
           display: 'flex',
           alignItems: 'center',
           fontSize: 15,
-          color: '#999',
+          color: colors.textTertiary,
         }}
       >
         user@company.com
@@ -60,20 +61,20 @@ const MockLoginForm: React.FC = () => (
     </div>
 
     <div style={{ marginBottom: 28 }}>
-      <label style={{ fontSize: 13, color: '#666', display: 'block', marginBottom: 6 }}>
+      <label style={{ fontSize: 13, color: colors.textSecondary, display: 'block', marginBottom: 6 }}>
         Password
       </label>
       <div
         style={{
           height: 44,
-          border: '1px solid #D1D1D6',
-          borderRadius: 8,
+          border: `1px solid ${colors.border}`,
+          borderRadius: radii.standard,
           background: '#F9F9F9',
           padding: '0 12px',
           display: 'flex',
           alignItems: 'center',
           fontSize: 15,
-          color: '#999',
+          color: colors.textTertiary,
         }}
       >
         ••••••••••
@@ -83,8 +84,8 @@ const MockLoginForm: React.FC = () => (
     <div
       style={{
         height: 48,
-        borderRadius: 8,
-        background: '#0070D2',
+        borderRadius: radii.standard,
+        background: colors.sfBlue,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -98,7 +99,7 @@ const MockLoginForm: React.FC = () => (
     </div>
 
     <div style={{ textAlign: 'center', marginTop: 16 }}>
-      <span style={{ fontSize: 13, color: '#007AFF', cursor: 'pointer' }}>
+      <span style={{ fontSize: 13, color: colors.brandTeal, cursor: 'pointer' }}>
         Forgot Your Password?
       </span>
     </div>
@@ -140,7 +141,7 @@ export const SalesforceLoginScreen: React.FC<ScreenProps> = ({ scenario, copyMod
       style={{
         position: 'absolute',
         inset: 0,
-        background: 'rgba(0,0,0,0.4)',
+        background: colors.overlay,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -150,22 +151,22 @@ export const SalesforceLoginScreen: React.FC<ScreenProps> = ({ scenario, copyMod
     >
       <div
         style={{
-          background: '#fff',
-          borderRadius: 14,
+          background: colors.surface,
+          borderRadius: radii.modal,
           width: '100%',
           maxWidth: 270,
           overflow: 'hidden',
         }}
       >
         <div style={{ padding: '20px 16px 16px', textAlign: 'center' }}>
-          <div style={{ fontSize: 17, fontWeight: 600, color: '#22333B', marginBottom: 8 }}>
+          <div style={{ fontSize: 17, fontWeight: 600, color: colors.textPrimary, marginBottom: 8 }}>
             {title}
           </div>
-          <div style={{ fontSize: 13, color: '#666', lineHeight: 1.5, whiteSpace: 'pre-line' }}>
+          <div style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.5, whiteSpace: 'pre-line' }}>
             {message}
           </div>
         </div>
-        <div style={{ borderTop: '0.5px solid #E5E5EA', display: 'flex' }}>
+        <div style={{ borderTop: `0.5px solid ${colors.border}`, display: 'flex' }}>
           {buttons.map((btn, i) => (
             <div
               key={btn}
@@ -174,10 +175,10 @@ export const SalesforceLoginScreen: React.FC<ScreenProps> = ({ scenario, copyMod
                 padding: '12px 0',
                 textAlign: 'center',
                 fontSize: 17,
-                color: '#007AFF',
+                color: colors.brandTeal,
                 fontWeight: i === buttons.length - 1 ? 600 : 400,
                 cursor: 'pointer',
-                borderLeft: i > 0 ? '0.5px solid #E5E5EA' : 'none',
+                borderLeft: i > 0 ? `0.5px solid ${colors.border}` : 'none',
               }}
             >
               {btn}
@@ -194,21 +195,21 @@ export const SalesforceLoginScreen: React.FC<ScreenProps> = ({ scenario, copyMod
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        background: '#fff',
-        fontFamily: '-apple-system, SF Pro, system-ui, sans-serif',
+        background: colors.background,
+        fontFamily: typography.fontFamily,
         position: 'relative',
       }}
     >
       <style>{spinKeyframes}</style>
 
-      {/* Header bar */}
+      {/* Dark header bar */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           height: 44,
           padding: '0 16px',
-          borderBottom: '0.5px solid #E5E5EA',
+          background: colors.topBar,
         }}
       >
         <div style={{ cursor: 'pointer', padding: '4px 8px 4px 0' }}>
@@ -220,7 +221,7 @@ export const SalesforceLoginScreen: React.FC<ScreenProps> = ({ scenario, copyMod
             textAlign: 'center',
             fontSize: 17,
             fontWeight: 600,
-            color: '#22333B',
+            color: '#fff',
             marginRight: 20,
           }}
         >
@@ -229,7 +230,7 @@ export const SalesforceLoginScreen: React.FC<ScreenProps> = ({ scenario, copyMod
       </div>
 
       {/* WebView content area */}
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: colors.surface }}>
         {/* Always show the form as base layer */}
         <MockLoginForm />
 
@@ -238,11 +239,11 @@ export const SalesforceLoginScreen: React.FC<ScreenProps> = ({ scenario, copyMod
           renderOverlay(
             <>
               <Spinner size={40} />
-              <p style={{ marginTop: 20, fontSize: 15, color: '#666', textAlign: 'center' }}>
+              <p style={{ marginTop: 20, fontSize: 15, color: colors.textSecondary, textAlign: 'center' }}>
                 {copy.loading || 'Loading...'}
               </p>
               {showSlow && copy.slow && (
-                <p style={{ marginTop: 8, fontSize: 13, color: '#999', textAlign: 'center' }}>
+                <p style={{ marginTop: 8, fontSize: 13, color: colors.textTertiary, textAlign: 'center' }}>
                   {copy.slow}
                 </p>
               )}
@@ -257,11 +258,11 @@ export const SalesforceLoginScreen: React.FC<ScreenProps> = ({ scenario, copyMod
                 <circle cx="24" cy="24" r="22" stroke="#FF3B30" strokeWidth="2" />
                 <path d="M16 16L32 32M32 16L16 32" stroke="#FF3B30" strokeWidth="2.5" strokeLinecap="round" />
               </svg>
-              <p style={{ marginTop: 20, fontSize: 16, fontWeight: 600, color: '#22333B', textAlign: 'center' }}>
+              <p style={{ marginTop: 20, fontSize: 16, fontWeight: 600, color: colors.textPrimary, textAlign: 'center' }}>
                 {copyMode === 'current' ? 'Connection Error' : 'Connection Lost'}
               </p>
               {copy.networkDrop && (
-                <p style={{ marginTop: 8, fontSize: 14, color: '#666', textAlign: 'center', lineHeight: 1.5 }}>
+                <p style={{ marginTop: 8, fontSize: 14, color: colors.textSecondary, textAlign: 'center', lineHeight: 1.5 }}>
                   {copy.networkDrop}
                 </p>
               )}
@@ -269,8 +270,8 @@ export const SalesforceLoginScreen: React.FC<ScreenProps> = ({ scenario, copyMod
                 style={{
                   marginTop: 24,
                   padding: '10px 32px',
-                  borderRadius: 8,
-                  background: '#007AFF',
+                  borderRadius: radii.button,
+                  background: colors.brandTeal,
                   color: '#fff',
                   fontSize: 16,
                   fontWeight: 600,
@@ -297,23 +298,22 @@ export const SalesforceLoginScreen: React.FC<ScreenProps> = ({ scenario, copyMod
               <>
                 <div
                   style={{
-                    fontSize: 18,
-                    fontWeight: 700,
-                    letterSpacing: 3,
-                    color: '#22333B',
+                    fontSize: typography.logo.fontSize,
+                    fontWeight: typography.logo.fontWeight,
+                    letterSpacing: typography.logo.letterSpacing,
+                    color: colors.textPrimary,
                     marginBottom: 32,
                   }}
                 >
-                  SITETRACKER
+                  {typography.logo.text}
                 </div>
                 <Spinner size={40} />
-                <p style={{ marginTop: 20, fontSize: 16, color: '#666' }}>
+                <p style={{ marginTop: 20, fontSize: 16, color: colors.textSecondary }}>
                   {copy.autoLogin}
                 </p>
               </>
             )
           ) : (
-            /* current mode: brief flash of the WebView - just show it with slight opacity */
             renderOverlay(
               <>
                 <Spinner size={32} />

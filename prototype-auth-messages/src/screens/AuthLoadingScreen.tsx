@@ -5,16 +5,17 @@ import {
   AUTH_LOADING_SUBTITLES,
   AUTH_LOADING_INFO_TIP,
 } from '../data/messages';
+import { colors, radii, typography } from '../theme';
 
 const spinKeyframes = `@keyframes spin { to { transform: rotate(360deg) } }`;
 
-const Spinner: React.FC<{ size?: number; color?: string }> = ({ size = 40, color = '#22333B' }) => (
+const Spinner: React.FC<{ size?: number; color?: string }> = ({ size = 40, color = colors.brandTeal }) => (
   <div
     style={{
       width: size,
       height: size,
       borderRadius: '50%',
-      border: '3px solid #e0e0e0',
+      border: `3px solid ${colors.border}`,
       borderTopColor: color,
       animation: 'spin 0.8s linear infinite',
     }}
@@ -23,17 +24,16 @@ const Spinner: React.FC<{ size?: number; color?: string }> = ({ size = 40, color
 
 const InfoIcon: React.FC = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
-    <circle cx="9" cy="9" r="8" stroke="#007AFF" strokeWidth="1.5" />
-    <path d="M9 8v5M9 5.5v.01" stroke="#007AFF" strokeWidth="1.5" strokeLinecap="round" />
+    <circle cx="9" cy="9" r="8" stroke={colors.brandTeal} strokeWidth="1.5" />
+    <path d="M9 8v5M9 5.5v.01" stroke={colors.brandTeal} strokeWidth="1.5" strokeLinecap="round" />
   </svg>
 );
 
 const WarningBanner: React.FC<{ message: string }> = ({ message }) => (
   <div
     style={{
-      background: '#FFF8E1',
-      border: '1px solid #F5A623',
-      borderRadius: 10,
+      background: colors.warning,
+      borderRadius: radii.standard,
       padding: '10px 14px',
       display: 'flex',
       alignItems: 'center',
@@ -43,7 +43,7 @@ const WarningBanner: React.FC<{ message: string }> = ({ message }) => (
     }}
   >
     <span style={{ fontSize: 16 }}>&#9888;</span>
-    <span style={{ fontSize: 13, color: '#22333B', lineHeight: 1.4 }}>{message}</span>
+    <span style={{ fontSize: 13, color: colors.warningDark, lineHeight: 1.4 }}>{message}</span>
   </div>
 );
 
@@ -54,9 +54,9 @@ const ErrorAlert: React.FC<{
 }> = ({ title, message, onRetry }) => (
   <div
     style={{
-      background: '#FFF5F5',
-      border: '1px solid #E53935',
-      borderRadius: 12,
+      background: colors.errorLight,
+      border: `1px solid ${colors.error}`,
+      borderRadius: radii.standard,
       padding: 20,
       width: '100%',
       textAlign: 'center',
@@ -67,7 +67,7 @@ const ErrorAlert: React.FC<{
         width: 48,
         height: 48,
         borderRadius: '50%',
-        background: '#E53935',
+        background: colors.error,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -78,17 +78,17 @@ const ErrorAlert: React.FC<{
         <path d="M6 6L18 18M18 6L6 18" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" />
       </svg>
     </div>
-    <p style={{ fontSize: 16, fontWeight: 600, color: '#E53935', margin: '0 0 6px' }}>{title}</p>
-    <p style={{ fontSize: 14, color: '#666', margin: 0, lineHeight: 1.5 }}>{message}</p>
+    <p style={{ fontSize: 16, fontWeight: 600, color: colors.error, margin: '0 0 6px' }}>{title}</p>
+    <p style={{ fontSize: 14, color: colors.textSecondary, margin: 0, lineHeight: 1.5 }}>{message}</p>
     {onRetry && (
       <button
         style={{
           marginTop: 16,
           padding: '10px 32px',
-          background: '#007AFF',
+          background: colors.brandTeal,
           color: '#fff',
           border: 'none',
-          borderRadius: 8,
+          borderRadius: radii.button,
           fontSize: 15,
           fontWeight: 600,
           cursor: 'pointer',
@@ -115,28 +115,25 @@ export const AuthLoadingScreen: React.FC<ScreenProps> = ({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Determine at which step to interrupt for error scenarios
   const getInterruptStep = (): number => {
     switch (scenario) {
       case 'connection-drops':
-        return 5; // ~60%
+        return 5;
       case 'session-expired':
-        return 3; // ~40%
+        return 3;
       case 'timeout':
-        return 2; // very early, crawling
+        return 2;
       default:
-        return TOTAL_STEPS; // no interrupt
+        return TOTAL_STEPS;
     }
   };
 
   const interruptStep = getInterruptStep();
 
   useEffect(() => {
-    // Elapsed time tracker
     elapsedRef.current = setInterval(() => {
       setElapsedMs((prev) => prev + 500);
     }, 500);
-
     return () => {
       if (elapsedRef.current) clearInterval(elapsedRef.current);
     };
@@ -145,7 +142,6 @@ export const AuthLoadingScreen: React.FC<ScreenProps> = ({
   useEffect(() => {
     if (stepIndex >= TOTAL_STEPS || showError) return;
 
-    // If we hit the interrupt point, show error
     if (stepIndex >= interruptStep) {
       const delay = scenario === 'timeout' ? 3000 : 1500;
       timerRef.current = setTimeout(() => {
@@ -156,7 +152,6 @@ export const AuthLoadingScreen: React.FC<ScreenProps> = ({
       };
     }
 
-    // For slow-3g scenario, double the timing
     const multiplier = scenario === 'slow-3g' ? 2.5 : 1;
     const timing = STEP_TIMINGS[stepIndex] * multiplier;
 
@@ -171,16 +166,12 @@ export const AuthLoadingScreen: React.FC<ScreenProps> = ({
 
   const steps = copyMode === 'current' ? AUTH_LOADING_STEPS.current : AUTH_LOADING_STEPS.proposed;
   const currentStep = steps[Math.min(stepIndex, TOTAL_STEPS - 1)];
-
   const progress = Math.min((stepIndex / TOTAL_STEPS) * 100, 100);
 
-  // Subtitle logic
   const getSubtitle = (): string => {
     if (copyMode === 'current') {
       return AUTH_LOADING_SUBTITLES.current;
     }
-
-    // Proposed mode: adaptive subtitle
     const subs = AUTH_LOADING_SUBTITLES.proposed;
     if (elapsedMs < 5000) return subs.early;
     if (elapsedMs < 15000) return subs.medium;
@@ -189,7 +180,6 @@ export const AuthLoadingScreen: React.FC<ScreenProps> = ({
     return subs.tooLong;
   };
 
-  // First time user extra subtitle
   const getFirstTimeNote = (): string | null => {
     if (copyMode === 'proposed' && userContext === 'first-time') {
       return 'First time? This may take a few minutes to set up.';
@@ -197,55 +187,29 @@ export const AuthLoadingScreen: React.FC<ScreenProps> = ({
     return null;
   };
 
-  // Info tip
   const infoTip =
     copyMode === 'current' ? AUTH_LOADING_INFO_TIP.current : AUTH_LOADING_INFO_TIP.proposed;
 
-  // Error content for interrupted scenarios
   const renderError = () => {
     if (scenario === 'connection-drops') {
       if (copyMode === 'current') {
-        return (
-          <ErrorAlert
-            title="Error"
-            message="An unknown error has occurred."
-          />
-        );
+        return <ErrorAlert title="Error" message="An unknown error has occurred." />;
       }
       return (
-        <ErrorAlert
-          title="Connection lost"
-          message="Check your signal and tap Retry."
-          onRetry={() => {}}
-        />
+        <ErrorAlert title="Connection lost" message="Check your signal and tap Retry." onRetry={() => {}} />
       );
     }
-
     if (scenario === 'session-expired') {
       if (copyMode === 'current') {
-        return (
-          <ErrorAlert
-            title="Session Error"
-            message="Your current session is invalid."
-          />
-        );
+        return <ErrorAlert title="Session Error" message="Your current session is invalid." />;
       }
       return (
-        <ErrorAlert
-          title="Session ended"
-          message="Your session ended. Please sign in again to continue."
-        />
+        <ErrorAlert title="Session ended" message="Your session ended. Please sign in again to continue." />
       );
     }
-
     if (scenario === 'timeout') {
       if (copyMode === 'current') {
-        return (
-          <ErrorAlert
-            title="Timeout"
-            message="The request has timed out. Please try again."
-          />
-        );
+        return <ErrorAlert title="Timeout" message="The request has timed out. Please try again." />;
       }
       return (
         <ErrorAlert
@@ -255,7 +219,6 @@ export const AuthLoadingScreen: React.FC<ScreenProps> = ({
         />
       );
     }
-
     return null;
   };
 
@@ -269,8 +232,8 @@ export const AuthLoadingScreen: React.FC<ScreenProps> = ({
         flexDirection: 'column',
         alignItems: 'center',
         height: '100%',
-        background: '#fff',
-        fontFamily: '-apple-system, SF Pro, system-ui, sans-serif',
+        background: colors.background,
+        fontFamily: typography.fontFamily,
         padding: '60px 24px 32px',
         boxSizing: 'border-box',
       }}
@@ -296,17 +259,15 @@ export const AuthLoadingScreen: React.FC<ScreenProps> = ({
         </div>
       ) : (
         <>
-          {/* Spinner */}
           <div style={{ marginBottom: 28 }}>
-            <Spinner size={52} color="#007AFF" />
+            <Spinner size={52} color={colors.brandTeal} />
           </div>
 
-          {/* Current step message */}
           <p
             style={{
               fontSize: 18,
               fontWeight: 600,
-              color: '#22333B',
+              color: colors.textPrimary,
               textAlign: 'center',
               margin: '0 0 8px',
             }}
@@ -314,11 +275,10 @@ export const AuthLoadingScreen: React.FC<ScreenProps> = ({
             {currentStep}
           </p>
 
-          {/* Subtitle */}
           <p
             style={{
               fontSize: 14,
-              color: '#666',
+              color: colors.textSecondary,
               textAlign: 'center',
               margin: '0 0 4px',
               lineHeight: 1.5,
@@ -328,12 +288,11 @@ export const AuthLoadingScreen: React.FC<ScreenProps> = ({
             {getSubtitle()}
           </p>
 
-          {/* First-time note */}
           {getFirstTimeNote() && (
             <p
               style={{
                 fontSize: 13,
-                color: '#007AFF',
+                color: colors.brandTeal,
                 textAlign: 'center',
                 margin: '4px 0 0',
                 fontWeight: 500,
@@ -343,14 +302,13 @@ export const AuthLoadingScreen: React.FC<ScreenProps> = ({
             </p>
           )}
 
-          {/* Progress bar area */}
           <div style={{ width: '100%', marginTop: 36 }}>
             <div
               style={{
                 width: '100%',
                 height: 8,
-                borderRadius: 4,
-                background: '#E8E8E8',
+                borderRadius: radii.standard,
+                background: colors.border,
                 overflow: 'hidden',
               }}
             >
@@ -358,8 +316,8 @@ export const AuthLoadingScreen: React.FC<ScreenProps> = ({
                 style={{
                   width: `${progress}%`,
                   height: '100%',
-                  borderRadius: 4,
-                  background: '#007AFF',
+                  borderRadius: radii.standard,
+                  background: colors.brandTeal,
                   transition: 'width 300ms ease',
                 }}
               />
@@ -368,7 +326,7 @@ export const AuthLoadingScreen: React.FC<ScreenProps> = ({
               style={{
                 fontSize: 14,
                 fontWeight: 500,
-                color: '#22333B',
+                color: colors.textPrimary,
                 textAlign: 'center',
                 marginTop: 8,
               }}
@@ -379,21 +337,20 @@ export const AuthLoadingScreen: React.FC<ScreenProps> = ({
         </>
       )}
 
-      {/* Info tip box at bottom */}
       <div style={{ flexGrow: 1 }} />
       <div
         style={{
           display: 'flex',
           alignItems: 'flex-start',
           gap: 10,
-          background: '#EFF6FF',
-          borderRadius: 10,
+          background: colors.brandTealLight,
+          borderRadius: radii.standard,
           padding: '12px 14px',
           width: '100%',
         }}
       >
         <InfoIcon />
-        <span style={{ fontSize: 13, color: '#22333B', lineHeight: 1.5 }}>{infoTip}</span>
+        <span style={{ fontSize: 13, color: colors.textPrimary, lineHeight: 1.5 }}>{infoTip}</span>
       </div>
     </div>
   );

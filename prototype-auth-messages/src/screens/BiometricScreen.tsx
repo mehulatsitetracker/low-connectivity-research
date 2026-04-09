@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import type { ScreenProps } from '../types';
 import { BIOMETRIC } from '../data/messages';
+import { colors, radii, typography } from '../theme';
 
 const spinKeyframes = `@keyframes spin { to { transform: rotate(360deg) } }`;
 
-const Spinner = ({ size = 40, color = '#22333B' }: { size?: number; color?: string }) => (
+const Spinner = ({ size = 40, color = colors.brandTeal }: { size?: number; color?: string }) => (
   <div
     style={{
       width: size,
       height: size,
       borderRadius: '50%',
-      border: '3px solid #e0e0e0',
+      border: `3px solid ${colors.border}`,
       borderTopColor: color,
       animation: 'spin 0.8s linear infinite',
     }}
@@ -19,11 +20,11 @@ const Spinner = ({ size = 40, color = '#22333B' }: { size?: number; color?: stri
 
 const FaceIdIcon = () => (
   <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-    <circle cx="32" cy="32" r="30" stroke="#22333B" strokeWidth="2" />
-    <circle cx="24" cy="26" r="2.5" fill="#22333B" />
-    <circle cx="40" cy="26" r="2.5" fill="#22333B" />
-    <path d="M32 22V30" stroke="#22333B" strokeWidth="2" strokeLinecap="round" />
-    <path d="M24 40c2 4 6 6 8 6s6-2 8-6" stroke="#22333B" strokeWidth="2" strokeLinecap="round" fill="none" />
+    <rect x="3" y="3" width="58" height="58" rx="13" stroke={colors.brandTeal} strokeWidth="3" />
+    <circle cx="22" cy="26" r="2.5" fill={colors.brandTeal} />
+    <circle cx="42" cy="26" r="2.5" fill={colors.brandTeal} />
+    <path d="M22 42c3 5 17 5 20 0" stroke={colors.brandTeal} strokeWidth="2.5" strokeLinecap="round" />
+    <path d="M32 26v8h3" stroke={colors.brandTeal} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -35,17 +36,17 @@ const BiometricBottomSheet = ({ text, showCancel = true }: { text: string; showC
       left: 0,
       right: 0,
       top: 0,
-      background: 'rgba(0,0,0,0.4)',
+      background: colors.overlay,
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'flex-end',
-      fontFamily: '-apple-system, SF Pro, system-ui, sans-serif',
+      fontFamily: typography.fontFamily,
     }}
   >
     <div
       style={{
-        background: '#fff',
-        borderRadius: '16px 16px 0 0',
+        background: colors.surface,
+        borderRadius: radii.bottomSheet,
         padding: '28px 24px 40px',
         display: 'flex',
         flexDirection: 'column',
@@ -54,7 +55,7 @@ const BiometricBottomSheet = ({ text, showCancel = true }: { text: string; showC
       }}
     >
       <FaceIdIcon />
-      <p style={{ fontSize: 16, color: '#22333B', marginTop: 16, marginBottom: 0, lineHeight: 1.5 }}>
+      <p style={{ fontSize: 16, color: colors.textPrimary, marginTop: 16, marginBottom: 0, lineHeight: 1.5 }}>
         {text}
       </p>
       {showCancel && (
@@ -62,10 +63,10 @@ const BiometricBottomSheet = ({ text, showCancel = true }: { text: string; showC
           style={{
             marginTop: 20,
             padding: '10px 32px',
-            borderRadius: 8,
-            border: '1px solid #e0e0e0',
-            background: '#fff',
-            color: '#007AFF',
+            borderRadius: radii.button,
+            border: `1px solid ${colors.border}`,
+            background: colors.surface,
+            color: colors.brandTeal,
             fontSize: 16,
             cursor: 'pointer',
           }}
@@ -88,14 +89,14 @@ const AlertBox = ({ title, message, buttons }: { title?: string; message: string
       left: 0,
       right: 0,
       bottom: 0,
-      background: 'rgba(0,0,0,0.4)',
-      fontFamily: '-apple-system, SF Pro, system-ui, sans-serif',
+      background: colors.overlay,
+      fontFamily: typography.fontFamily,
     }}
   >
     <div
       style={{
-        background: '#fff',
-        borderRadius: 14,
+        background: colors.surface,
+        borderRadius: radii.modal,
         padding: '20px 16px 0',
         maxWidth: 270,
         width: '75%',
@@ -103,20 +104,20 @@ const AlertBox = ({ title, message, buttons }: { title?: string; message: string
       }}
     >
       {title && (
-        <div style={{ fontSize: 17, fontWeight: 600, color: '#22333B', marginBottom: 4 }}>
+        <div style={{ fontSize: 17, fontWeight: 600, color: colors.textPrimary, marginBottom: 4 }}>
           {title}
         </div>
       )}
-      <div style={{ fontSize: 13, color: '#22333B', lineHeight: 1.5, paddingBottom: 16 }}>
+      <div style={{ fontSize: 13, color: colors.textPrimary, lineHeight: 1.5, paddingBottom: 16 }}>
         {message}
       </div>
       {buttons.map((btn, i) => (
         <div
           key={i}
           style={{
-            borderTop: '1px solid #e0e0e0',
+            borderTop: `1px solid ${colors.border}`,
             padding: '12px 0',
-            color: '#007AFF',
+            color: colors.brandTeal,
             fontSize: 17,
             fontWeight: i === buttons.length - 1 ? 600 : 400,
             cursor: 'pointer',
@@ -143,9 +144,21 @@ export const BiometricScreen: React.FC<ScreenProps> = ({ scenario, copyMode }) =
     position: 'relative',
     height: '100%',
     width: '100%',
-    background: '#fff',
-    fontFamily: '-apple-system, SF Pro, system-ui, sans-serif',
+    background: colors.background,
+    fontFamily: typography.fontFamily,
     overflow: 'hidden',
+  };
+
+  const btnStyle: React.CSSProperties = {
+    marginTop: 20,
+    padding: '12px 28px',
+    borderRadius: radii.button,
+    border: 'none',
+    background: colors.brandTeal,
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 600,
+    cursor: 'pointer',
   };
 
   // Auto-login scenario
@@ -155,33 +168,18 @@ export const BiometricScreen: React.FC<ScreenProps> = ({ scenario, copyMode }) =
         <div style={containerStyle}>
           <style>{spinKeyframes}</style>
           {autoLoginPhase === 'loading' ? (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-                background: '#f0f0f0',
-              }}
-            >
-              <div style={{ fontSize: 14, color: '#666' }}>salesforce.com</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', background: colors.background }}>
+              <div style={{ fontSize: 14, color: colors.textSecondary }}>salesforce.com</div>
             </div>
           ) : (
-            <div
-              style={{
-                padding: '60px 24px 24px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 16,
-              }}
-            >
-              <div style={{ height: 44, background: '#e0e0e0', borderRadius: 8 }} />
-              <div style={{ height: 44, background: '#e0e0e0', borderRadius: 8 }} />
+            <div style={{ padding: '60px 24px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ height: 44, background: colors.border, borderRadius: radii.standard }} />
+              <div style={{ height: 44, background: colors.border, borderRadius: radii.standard }} />
               <div
                 style={{
                   height: 44,
-                  background: '#007AFF',
-                  borderRadius: 8,
+                  background: colors.sfBlue,
+                  borderRadius: radii.standard,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -201,29 +199,20 @@ export const BiometricScreen: React.FC<ScreenProps> = ({ scenario, copyMode }) =
     return (
       <div style={containerStyle}>
         <style>{spinKeyframes}</style>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            background: '#fff',
-          }}
-        >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
           <div
             style={{
-              fontSize: 18,
-              fontWeight: 700,
-              letterSpacing: 3,
-              color: '#22333B',
+              fontSize: typography.logo.fontSize,
+              fontWeight: typography.logo.fontWeight,
+              letterSpacing: typography.logo.letterSpacing,
+              color: colors.textPrimary,
               marginBottom: 48,
             }}
           >
-            SITETRACKER
+            {typography.logo.text}
           </div>
-          <Spinner size={48} color="#007AFF" />
-          <p style={{ marginTop: 24, fontSize: 17, color: '#22333B', fontWeight: 500 }}>
+          <Spinner size={48} color={colors.brandTeal} />
+          <p style={{ marginTop: 24, fontSize: 17, color: colors.textPrimary, fontWeight: 500 }}>
             {BIOMETRIC.proposed.autoLogin}
           </p>
         </div>
@@ -236,46 +225,18 @@ export const BiometricScreen: React.FC<ScreenProps> = ({ scenario, copyMode }) =
     if (copyMode === 'current') {
       return (
         <div style={containerStyle}>
-          <AlertBox
-            title="Device Not Secured"
-            message={BIOMETRIC.current.notEnrolled}
-            buttons={['OK']}
-          />
+          <AlertBox title="Device Not Secured" message={BIOMETRIC.current.notEnrolled} buttons={['OK']} />
         </div>
       );
     }
     return (
       <div style={containerStyle}>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            padding: 32,
-            textAlign: 'center',
-          }}
-        >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 32, textAlign: 'center' }}>
           <FaceIdIcon />
-          <p style={{ fontSize: 16, color: '#22333B', marginTop: 20, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 16, color: colors.textPrimary, marginTop: 20, lineHeight: 1.5 }}>
             {BIOMETRIC.proposed.notEnrolled}
           </p>
-          <button
-            style={{
-              marginTop: 20,
-              padding: '12px 28px',
-              borderRadius: 8,
-              border: 'none',
-              background: '#007AFF',
-              color: '#fff',
-              fontSize: 16,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            Open Settings
-          </button>
+          <button style={btnStyle}>Open Settings</button>
         </div>
       </div>
     );
@@ -286,16 +247,7 @@ export const BiometricScreen: React.FC<ScreenProps> = ({ scenario, copyMode }) =
     if (copyMode === 'current') {
       return (
         <div style={containerStyle}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              color: '#999',
-              fontSize: 14,
-            }}
-          >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: colors.textTertiary, fontSize: 14 }}>
             {/* Current: nothing shown */}
           </div>
         </div>
@@ -303,19 +255,9 @@ export const BiometricScreen: React.FC<ScreenProps> = ({ scenario, copyMode }) =
     }
     return (
       <div style={containerStyle}>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            padding: 32,
-            textAlign: 'center',
-          }}
-        >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 32, textAlign: 'center' }}>
           <FaceIdIcon />
-          <p style={{ fontSize: 16, color: '#22333B', marginTop: 20, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 16, color: colors.textPrimary, marginTop: 20, lineHeight: 1.5 }}>
             {BIOMETRIC.proposed.cancelled}
           </p>
         </div>
@@ -328,46 +270,18 @@ export const BiometricScreen: React.FC<ScreenProps> = ({ scenario, copyMode }) =
     if (copyMode === 'current') {
       return (
         <div style={containerStyle}>
-          <AlertBox
-            title="Error"
-            message={BIOMETRIC.current.error}
-            buttons={['OK']}
-          />
+          <AlertBox title="Error" message={BIOMETRIC.current.error} buttons={['OK']} />
         </div>
       );
     }
     return (
       <div style={containerStyle}>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            padding: 32,
-            textAlign: 'center',
-          }}
-        >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 32, textAlign: 'center' }}>
           <FaceIdIcon />
-          <p style={{ fontSize: 16, color: '#22333B', marginTop: 20, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 16, color: colors.textPrimary, marginTop: 20, lineHeight: 1.5 }}>
             {BIOMETRIC.proposed.error}
           </p>
-          <button
-            style={{
-              marginTop: 20,
-              padding: '12px 28px',
-              borderRadius: 8,
-              border: 'none',
-              background: '#007AFF',
-              color: '#fff',
-              fontSize: 16,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            Enter Password
-          </button>
+          <button style={btnStyle}>Enter Password</button>
         </div>
       </div>
     );
@@ -379,15 +293,8 @@ export const BiometricScreen: React.FC<ScreenProps> = ({ scenario, copyMode }) =
       return (
         <div style={containerStyle}>
           <style>{spinKeyframes}</style>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-            }}
-          >
-            <Spinner size={40} color="#007AFF" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <Spinner size={40} color={colors.brandTeal} />
           </div>
         </div>
       );
@@ -395,28 +302,20 @@ export const BiometricScreen: React.FC<ScreenProps> = ({ scenario, copyMode }) =
     return (
       <div style={containerStyle}>
         <style>{spinKeyframes}</style>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-          }}
-        >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
           <div
             style={{
-              fontSize: 18,
-              fontWeight: 700,
-              letterSpacing: 3,
-              color: '#22333B',
+              fontSize: typography.logo.fontSize,
+              fontWeight: typography.logo.fontWeight,
+              letterSpacing: typography.logo.letterSpacing,
+              color: colors.textPrimary,
               marginBottom: 48,
             }}
           >
-            SITETRACKER
+            {typography.logo.text}
           </div>
-          <Spinner size={48} color="#007AFF" />
-          <p style={{ marginTop: 24, fontSize: 16, color: '#666' }}>
+          <Spinner size={48} color={colors.brandTeal} />
+          <p style={{ marginTop: 24, fontSize: 16, color: colors.textSecondary }}>
             {BIOMETRIC.proposed.slowNetwork}
           </p>
         </div>

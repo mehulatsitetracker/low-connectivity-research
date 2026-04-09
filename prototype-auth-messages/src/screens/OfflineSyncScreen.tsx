@@ -1,16 +1,17 @@
 import React from 'react';
 import type { ScreenProps } from '../types';
 import { OFFLINE_SYNC_PHASES } from '../data/messages';
+import { colors, radii, typography } from '../theme';
 
 const spinKeyframes = `@keyframes spin { to { transform: rotate(360deg) } }`;
 
-const Spinner: React.FC<{ size?: number; color?: string }> = ({ size = 18, color = '#007AFF' }) => (
+const Spinner: React.FC<{ size?: number; color?: string }> = ({ size = 18, color = colors.brandTeal }) => (
   <div
     style={{
       width: size,
       height: size,
       borderRadius: '50%',
-      border: '2px solid #e0e0e0',
+      border: `2px solid ${colors.border}`,
       borderTopColor: color,
       animation: 'spin 0.8s linear infinite',
       flexShrink: 0,
@@ -34,7 +35,7 @@ const StatusIcon: React.FC<{ status: PhaseStatus }> = ({ status }) => {
           width: 22,
           height: 22,
           borderRadius: '50%',
-          background: '#007AFF',
+          background: colors.brandTeal,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -49,7 +50,7 @@ const StatusIcon: React.FC<{ status: PhaseStatus }> = ({ status }) => {
   }
 
   if (status === 'in-progress') {
-    return <Spinner size={22} color="#007AFF" />;
+    return <Spinner size={22} color={colors.brandTeal} />;
   }
 
   if (status === 'failed') {
@@ -59,7 +60,7 @@ const StatusIcon: React.FC<{ status: PhaseStatus }> = ({ status }) => {
           width: 22,
           height: 22,
           borderRadius: '50%',
-          background: '#E53935',
+          background: colors.error,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -80,7 +81,7 @@ const StatusIcon: React.FC<{ status: PhaseStatus }> = ({ status }) => {
         width: 22,
         height: 22,
         borderRadius: '50%',
-        border: '2px solid #ccc',
+        border: `2px solid ${colors.border}`,
         flexShrink: 0,
         boxSizing: 'border-box',
       }}
@@ -102,14 +103,11 @@ function buildPhases(
 
   switch (scenario) {
     case 'happy': {
-      // 7 completed, 8th in progress, rest waiting
       for (let i = 0; i < 7; i++) phases[i].status = 'completed';
       phases[7].status = 'in-progress';
       break;
     }
-
     case 'phase-fails': {
-      // 5 completed, 6th failed
       for (let i = 0; i < 5; i++) phases[i].status = 'completed';
       phases[5].status = 'failed';
       phases[5].errorText =
@@ -118,19 +116,14 @@ function buildPhases(
           : "Couldn't download your schedule \u2014 tap to retry";
       break;
     }
-
     case 'all-fail': {
-      // All 12 failed
       for (let i = 0; i < 12; i++) {
         phases[i].status = 'failed';
-        phases[i].errorText =
-          copyMode === 'current' ? 'Sync failed' : 'Failed';
+        phases[i].errorText = copyMode === 'current' ? 'Sync failed' : 'Failed';
       }
       break;
     }
-
     case 'network-lost': {
-      // 3 completed, 4th shows paused/failed
       for (let i = 0; i < 3; i++) phases[i].status = 'completed';
       phases[3].status = 'failed';
       phases[3].errorText =
@@ -139,7 +132,6 @@ function buildPhases(
           : 'Sync paused \u2014 waiting for connection';
       break;
     }
-
     default:
       break;
   }
@@ -152,11 +144,8 @@ export const OfflineSyncScreen: React.FC<ScreenProps> = ({
   copyMode,
 }) => {
   const phases = buildPhases(scenario, copyMode);
-
   const completedCount = phases.filter((p) => p.status === 'completed').length;
   const totalCount = phases.length;
-
-  // All-fail summary for proposed mode
   const showAllFailSummary = scenario === 'all-fail' && copyMode === 'proposed';
 
   return (
@@ -165,19 +154,19 @@ export const OfflineSyncScreen: React.FC<ScreenProps> = ({
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        fontFamily: '-apple-system, SF Pro, system-ui, sans-serif',
+        fontFamily: typography.fontFamily,
       }}
     >
       <style>{spinKeyframes}</style>
 
       {/* Gray app background */}
-      <div style={{ flex: 1, background: '#f5f5f5' }} />
+      <div style={{ flex: 1, background: colors.background }} />
 
       {/* Bottom sheet */}
       <div
         style={{
-          background: '#fff',
-          borderRadius: '20px 20px 0 0',
+          background: colors.surface,
+          borderRadius: radii.bottomSheet,
           boxShadow: '0 -4px 20px rgba(0,0,0,0.08)',
           padding: '20px 20px 24px',
           maxHeight: '75%',
@@ -190,7 +179,7 @@ export const OfflineSyncScreen: React.FC<ScreenProps> = ({
             width: 36,
             height: 4,
             borderRadius: 2,
-            background: '#D1D1D6',
+            background: colors.border,
             margin: '0 auto 16px',
           }}
         />
@@ -200,7 +189,7 @@ export const OfflineSyncScreen: React.FC<ScreenProps> = ({
           style={{
             fontSize: 18,
             fontWeight: 600,
-            color: '#22333B',
+            color: colors.textPrimary,
             margin: '0 0 4px',
           }}
         >
@@ -209,13 +198,7 @@ export const OfflineSyncScreen: React.FC<ScreenProps> = ({
 
         {/* Progress summary (proposed only) */}
         {copyMode === 'proposed' && (
-          <p
-            style={{
-              fontSize: 14,
-              color: '#666',
-              margin: '0 0 16px',
-            }}
-          >
+          <p style={{ fontSize: 14, color: colors.textSecondary, margin: '0 0 16px' }}>
             {completedCount} of {totalCount} complete
           </p>
         )}
@@ -226,31 +209,17 @@ export const OfflineSyncScreen: React.FC<ScreenProps> = ({
         {showAllFailSummary && (
           <div
             style={{
-              background: '#FFF5F5',
-              border: '1px solid #E53935',
-              borderRadius: 10,
+              background: colors.errorLight,
+              border: `1px solid ${colors.error}`,
+              borderRadius: radii.standard,
               padding: '12px 14px',
               marginBottom: 16,
             }}
           >
-            <p
-              style={{
-                fontSize: 14,
-                color: '#E53935',
-                fontWeight: 600,
-                margin: '0 0 4px',
-              }}
-            >
+            <p style={{ fontSize: 14, color: colors.error, fontWeight: 600, margin: '0 0 4px' }}>
               Offline mode isn't available right now
             </p>
-            <p
-              style={{
-                fontSize: 13,
-                color: '#666',
-                margin: 0,
-                lineHeight: 1.5,
-              }}
-            >
+            <p style={{ fontSize: 13, color: colors.textSecondary, margin: 0, lineHeight: 1.5 }}>
               Connect to Wi-Fi and try again.
             </p>
           </div>
@@ -265,7 +234,7 @@ export const OfflineSyncScreen: React.FC<ScreenProps> = ({
               alignItems: 'flex-start',
               gap: 12,
               padding: '10px 0',
-              borderBottom: i < phases.length - 1 ? '1px solid #F0F0F0' : 'none',
+              borderBottom: i < phases.length - 1 ? `1px solid ${colors.background}` : 'none',
             }}
           >
             <StatusIcon status={phase.status} />
@@ -275,10 +244,10 @@ export const OfflineSyncScreen: React.FC<ScreenProps> = ({
                   fontSize: 15,
                   color:
                     phase.status === 'failed'
-                      ? '#E53935'
+                      ? colors.error
                       : phase.status === 'waiting'
-                      ? '#999'
-                      : '#22333B',
+                      ? colors.textTertiary
+                      : colors.textPrimary,
                   margin: 0,
                   fontWeight: phase.status === 'in-progress' ? 500 : 400,
                 }}
@@ -289,7 +258,7 @@ export const OfflineSyncScreen: React.FC<ScreenProps> = ({
                 <p
                   style={{
                     fontSize: 13,
-                    color: phase.status === 'failed' ? '#E53935' : '#666',
+                    color: phase.status === 'failed' ? colors.error : colors.textSecondary,
                     margin: '4px 0 0',
                     lineHeight: 1.4,
                   }}
