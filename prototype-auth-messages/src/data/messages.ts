@@ -36,7 +36,7 @@ export const AUTH_LOADING_SUBTITLES = {
 
 export const AUTH_LOADING_INFO_TIP = {
   current: 'Keep the app open during the sync process. You can use the app once sync is complete.',
-  proposed: 'Keep the app open during setup.',
+  proposed: 'Keep the app open during this process.',
 };
 
 export const OFFLINE_SYNC_PHASES = {
