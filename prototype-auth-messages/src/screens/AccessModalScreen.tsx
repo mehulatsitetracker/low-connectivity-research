@@ -155,7 +155,7 @@ export const AccessModalScreen: React.FC<ScreenProps> = ({ scenario, copyMode })
                     textAlign: 'center',
                   }}
                 >
-                  Contact your Salesforce admin for help.
+                  Contact your Sitetracker admin for help.
                 </p>
               ) : (
                 <button
