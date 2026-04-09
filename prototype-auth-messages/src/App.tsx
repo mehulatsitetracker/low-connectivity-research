@@ -33,18 +33,21 @@ const SCREEN_COMPONENTS = [
 // Bidirectional mapping: network ↔ scenario per screen.
 // network→scenario: when you toggle network, auto-pick scenario
 // scenario→network: when you pick a scenario, auto-update network indicator
+// Mappings based on low-network-ux-audit.md:
+// - Only map when a scenario is genuinely caused by that network condition
+// - Omit a network state to leave the current scenario unchanged
 const NETWORK_SCENARIO_MAP: Partial<Record<ScreenId, Partial<Record<NetworkState, string>>>> = {
-  'reset':             { offline: 'corrupted-session', slow: 'slow-device',    good: 'happy' },
-  'domain-select':     { offline: 'offline',           slow: 'happy',          good: 'happy' },
-  'salesforce-login':  { offline: 'network-drops',     slow: 'slow-loading',   good: 'happy' },
-  'vault-modal':       { offline: 'biometric-error',   slow: 'happy',          good: 'happy' },
-  'login-success':     { offline: 'access-denied',     slow: 'validation-hangs', good: 'happy' },
-  'auth-loading':      { offline: 'connection-drops',  slow: 'slow-3g',        good: 'happy' },
-  'offline-sync':      { offline: 'network-lost',      slow: 'phase-fails',    good: 'happy' },
-  'access-modal':      { offline: 'network-error',     slow: 'server-error',   good: 'permission-error' },
-  'biometric':         { offline: 'slow-network',      slow: 'slow-network',   good: 'auto-login' },
-  'logout':            { offline: 'session-expired',   slow: 'pre-expiry-warning', good: 'voluntary' },
-  'deep-link':         { offline: 'auth-fails',        slow: 'needs-login',    good: 'happy' },
+  'reset':             {                                slow: 'slow-device',       good: 'happy' },
+  'domain-select':     { offline: 'offline',                                       good: 'happy' },
+  'salesforce-login':  { offline: 'network-drops',      slow: 'slow-loading',      good: 'happy' },
+  // vault-modal: scenarios are device-level (biometric), not network-driven
+  'login-success':     {                                slow: 'validation-hangs',  good: 'happy' },
+  'auth-loading':      { offline: 'connection-drops',   slow: 'slow-3g',           good: 'happy' },
+  'offline-sync':      { offline: 'network-lost',       slow: 'phase-fails',       good: 'happy' },
+  'access-modal':      { offline: 'network-error',      slow: 'server-error',      good: 'permission-error' },
+  'biometric':         {                                slow: 'slow-network',      good: 'auto-login' },
+  'logout':            { offline: 'session-expired',                               good: 'voluntary' },
+  'deep-link':         { offline: 'auth-fails',                                    good: 'happy' },
 };
 
 // Reverse lookup: given a screen + scenario, what network state does it imply?
