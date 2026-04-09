@@ -145,20 +145,34 @@ export const AccessModalScreen: React.FC<ScreenProps> = ({ scenario, copyMode })
             </button>
           ) : (
             <>
-              <button
-                style={{
-                  padding: '12px 24px',
-                  borderRadius: radii.button,
-                  border: 'none',
-                  background: colors.brandTeal,
-                  color: '#fff',
-                  fontSize: 16,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                {isPermissionScenario(scenario) ? 'Contact Admin' : 'Try Again'}
-              </button>
+              {isPermissionScenario(scenario) ? (
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: colors.textSecondary,
+                    margin: 0,
+                    lineHeight: 1.5,
+                    textAlign: 'center',
+                  }}
+                >
+                  Contact your Salesforce admin for help.
+                </p>
+              ) : (
+                <button
+                  style={{
+                    padding: '12px 24px',
+                    borderRadius: radii.button,
+                    border: 'none',
+                    background: colors.brandTeal,
+                    color: '#fff',
+                    fontSize: 16,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Try Again
+                </button>
+              )}
               <button
                 style={{
                   padding: '12px 24px',
