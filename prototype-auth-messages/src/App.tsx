@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { MobileFrame } from './components/MobileFrame';
 import { SimulatorControls } from './components/SimulatorControls';
-import { SCREENS, type NetworkState, type UserContext, type CopyMode } from './types';
+import { SCREENS, type NetworkState, type UserContext, type CopyMode, type ScreenId } from './types';
 
 // Screen imports
 import { ResetScreen } from './screens/ResetScreen';
@@ -30,6 +30,19 @@ const SCREEN_COMPONENTS = [
   DeepLinkScreen,
 ] as const;
 
+// Maps network state → best matching scenario per screen.
+// If no mapping exists, the current scenario stays unchanged.
+const NETWORK_SCENARIO_MAP: Partial<Record<ScreenId, Partial<Record<NetworkState, string>>>> = {
+  'domain-select':     { offline: 'offline',          slow: 'happy',         good: 'happy' },
+  'salesforce-login':  { offline: 'network-drops',    slow: 'slow-loading',  good: 'happy' },
+  'auth-loading':      { offline: 'connection-drops', slow: 'slow-3g',       good: 'happy' },
+  'offline-sync':      { offline: 'network-lost',     slow: 'happy',         good: 'happy' },
+  'access-modal':      { offline: 'network-error',    slow: 'server-error',  good: 'permission-error' },
+  'biometric':         { offline: 'slow-network',     slow: 'slow-network',  good: 'auto-login' },
+  'logout':            { offline: 'session-expired',  slow: 'voluntary',     good: 'voluntary' },
+  'deep-link':         { offline: 'auth-fails',       slow: 'needs-login',   good: 'happy' },
+};
+
 function App() {
   const [screenIndex, setScreenIndex] = useState(0);
   const [networkState, setNetworkState] = useState<NetworkState>('good');
@@ -39,7 +52,20 @@ function App() {
 
   const handleScreenChange = (index: number) => {
     setScreenIndex(index);
-    setScenario(SCREENS[index].scenarios[0]);
+    const screen = SCREENS[index];
+    // When switching screen, pick scenario based on current network state if mapped
+    const mapped = NETWORK_SCENARIO_MAP[screen.id]?.[networkState];
+    setScenario(mapped && screen.scenarios.includes(mapped) ? mapped : screen.scenarios[0]);
+  };
+
+  const handleNetworkChange = (net: NetworkState) => {
+    setNetworkState(net);
+    const screen = SCREENS[screenIndex];
+    const mapped = NETWORK_SCENARIO_MAP[screen.id]?.[net];
+    if (mapped && screen.scenarios.includes(mapped)) {
+      setScenario(mapped);
+    }
+    // If no mapping, keep current scenario unchanged
   };
 
   const ScreenComponent = SCREEN_COMPONENTS[screenIndex];
@@ -53,7 +79,7 @@ function App() {
         copyMode={copyMode}
         scenario={scenario}
         onScreenChange={handleScreenChange}
-        onNetworkChange={setNetworkState}
+        onNetworkChange={handleNetworkChange}
         onUserContextChange={setUserContext}
         onCopyModeChange={setCopyMode}
         onScenarioChange={setScenario}
