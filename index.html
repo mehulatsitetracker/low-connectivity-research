@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Low Connectivity Research</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 80px 24px;
+    }
+    h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+    .subtitle { color: #6e6e73; font-size: 1.1rem; margin-bottom: 48px; text-align: center; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      max-width: 960px;
+      width: 100%;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px 28px;
+      text-decoration: none;
+      color: inherit;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+    .card-icon { font-size: 2rem; margin-bottom: 16px; }
+    .card h2 { font-size: 1.15rem; font-weight: 600; margin-bottom: 8px; }
+    .card p { color: #6e6e73; font-size: 0.95rem; line-height: 1.5; }
+    .tag {
+      display: inline-block;
+      background: #f0f0f0;
+      color: #6e6e73;
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Low Connectivity Research</h1>
+  <p class="subtitle">Interactive UX prototypes for Sitetracker Mobile</p>
+
+  <div class="grid">
+    <a class="card" href="./connectivity/">
+      <div class="card-icon">📶</div>
+      <h2>Connectivity Feedback</h2>
+      <p>How the app communicates slow/offline network states during normal usage -- banners, bottom sheets, and adaptive indicators.</p>
+      <span class="tag">Banner &amp; Feedback</span>
+    </a>
+
+    <a class="card" href="./auth-messages/">
+      <div class="card-icon">🔐</div>
+      <h2>Auth Flow Messaging</h2>
+      <p>Before/after comparison of all 11 authentication screens -- replacing developer jargon with user-friendly copy for field workers.</p>
+      <span class="tag">11 Screens</span>
+    </a>
+
+    <a class="card" href="./adhoc-job/">
+      <div class="card-icon">📋</div>
+      <h2>Ad-Hoc Job Tracking</h2>
+      <p>Site check-in/check-out flows, per-job timers, crew management, and form scenarios with configurable options.</p>
+      <span class="tag">Jobs &amp; Crew</span>
+    </a>
+  </div>
+</body>
+</html>
