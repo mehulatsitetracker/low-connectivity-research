@@ -41,26 +41,6 @@ const GearIcon = () => (
   </svg>
 );
 
-const BackChevron = () => (
-  <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
-    <path d="M9 1L1 9L9 17" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const ChevronRight = () => (
-  <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
-    <path d="M1 1L7 7L1 13" stroke={colors.textTertiary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const MoreDots = ({ color = '#fff' }: { color?: string }) => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-    <circle cx="10" cy="4" r="1.5" fill={color} />
-    <circle cx="10" cy="10" r="1.5" fill={color} />
-    <circle cx="10" cy="16" r="1.5" fill={color} />
-  </svg>
-);
-
 const SalesforceCloudIcon = () => (
   <svg width="24" height="18" viewBox="0 0 24 18" fill="none">
     <path

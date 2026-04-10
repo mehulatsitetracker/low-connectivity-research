@@ -2,6 +2,12 @@
 
 Interactive prototypes exploring UX improvements for Sitetracker Mobile in low-connectivity environments. These prototypes are browser-based simulations of the mobile app, designed for stakeholder review and design validation.
 
+## Live Demos
+
+- [Connectivity Feedback](https://mehulatsitetracker.github.io/low-connectivity-research/connectivity/) -- banners, bottom sheets, offline indicators
+- [Auth Flow Messaging](https://mehulatsitetracker.github.io/low-connectivity-research/auth-messages/) -- before/after copy for 11 auth screens
+- [Ad-Hoc Job Tracking](https://mehulatsitetracker.github.io/low-connectivity-research/adhoc-job/) -- check-in/out, timers, crew management
+
 ## Prerequisites
 
 - **Node.js** v18+ (tested on v24)
@@ -12,27 +18,27 @@ If you use nvm:
 nvm use 24  # or whatever version you have installed
 ```
 
-## Quick Start (run both prototypes)
+## Quick Start
 
 ```bash
 # Clone the repo
 git clone <repo-url>
 cd low-connectivity-research
 
-# Install dependencies for both prototypes
-cd prototype && npm install && cd ..
-cd prototype-auth-messages && npm install && cd ..
+# Install all dependencies (npm workspaces)
+npm install
 
-# Run them (in separate terminals)
-cd prototype && npm run dev          # http://localhost:5173
-cd prototype-auth-messages && npm run dev   # http://localhost:5174
+# Run a prototype (pick one)
+npm run dev:connectivity     # http://localhost:5173
+npm run dev:auth-messages    # http://localhost:5174
+npm run dev:adhoc-job        # http://localhost:5175
 ```
 
 ---
 
 ## Prototype 1: Low Connectivity Banner & Feedback
 
-**Location:** `prototype/`
+**Location:** `apps/connectivity/`
 **URL:** http://localhost:5173
 
 Explores how the app should communicate slow/offline network states to field users during normal app usage (home screen, job details, etc.).
@@ -45,7 +51,7 @@ Explores how the app should communicate slow/offline network states to field use
 
 ### How to use
 
-1. Run `cd prototype && npm install && npm run dev`
+1. Run `npm run dev:connectivity`
 2. Open http://localhost:5173
 3. Use the **Simulate Network** panel (top-left) to toggle between:
    - **Good** -- normal app, no banners
@@ -58,18 +64,18 @@ Explores how the app should communicate slow/offline network states to field use
 
 | File | Purpose |
 |------|---------|
-| `src/App.tsx` | Main shell with network state management |
-| `src/components/LowConnectivityBanner.tsx` | The slow/offline banner component |
-| `src/components/ConnectivityBottomSheet.tsx` | Detail sheet with offline capabilities |
-| `src/components/MobileFrame.tsx` | iPhone simulator frame (390x844) |
-| `src/screens/HomeScreen.tsx` | Home screen with favorites, forms, recent items |
-| `src/screens/JobDetailScreen.tsx` | Job detail view |
+| `apps/connectivity/src/App.tsx` | Main shell with network state management |
+| `apps/connectivity/src/components/LowConnectivityBanner.tsx` | The slow/offline banner component |
+| `apps/connectivity/src/components/ConnectivityBottomSheet.tsx` | Detail sheet with offline capabilities |
+| `apps/connectivity/src/components/MobileFrame.tsx` | iPhone simulator frame (390x844) |
+| `apps/connectivity/src/screens/HomeScreen.tsx` | Home screen with favorites, forms, recent items |
+| `apps/connectivity/src/screens/JobDetailScreen.tsx` | Job detail view |
 
 ---
 
 ## Prototype 2: Auth Flow Messaging Improvements
 
-**Location:** `prototype-auth-messages/`
+**Location:** `apps/auth-messages/`
 **URL:** http://localhost:5174
 
 A flow simulator covering all 11 screens in the authentication flow. Compares the current developer-jargon copy against proposed user-friendly messaging for field workers.
@@ -100,7 +106,7 @@ A flow simulator covering all 11 screens in the authentication flow. Compares th
 
 ### How to use
 
-1. Run `cd prototype-auth-messages && npm install && npm run dev`
+1. Run `npm run dev:auth-messages`
 2. Open http://localhost:5174
 3. Use the **left sidebar** controls:
 
@@ -119,29 +125,59 @@ A flow simulator covering all 11 screens in the authentication flow. Compares th
    - Returning / First-time -- changes personalization ("Welcome back" vs "Welcome to Sitetracker")
 
    **Scenario:**
-   - Each screen has its own edge cases. Select one to see how the app responds. Examples:
-     - AuthLoadingScreenV2 > "connection drops" -- watch progress build to ~60% then show an error
-     - AccessModal > "network error" -- red signal icon vs the generic lock
-     - Logout > "session expired" -- compare the terse current alert vs the reassuring proposed message
+   - Each screen has its own edge cases. Select one to see how the app responds.
 
 ### Key files
 
 | File | Purpose |
 |------|---------|
-| `src/App.tsx` | Flow state machine, screen routing, key-based re-mount |
-| `src/data/messages.ts` | All current vs proposed copy as structured data |
-| `src/types.ts` | Screen definitions, scenario lists, shared types |
-| `src/components/SimulatorControls.tsx` | Left sidebar with all toggles |
-| `src/components/MobileFrame.tsx` | iPhone simulator frame |
-| `src/screens/AuthLoadingScreen.tsx` | The critical 8-step sync screen with animations |
-| `src/screens/OfflineSyncScreen.tsx` | 12-phase offline sync bottom sheet |
-| `src/screens/AccessModalScreen.tsx` | Permission error modal with admin action cards |
+| `apps/auth-messages/src/App.tsx` | Flow state machine, screen routing, key-based re-mount |
+| `apps/auth-messages/src/data/messages.ts` | All current vs proposed copy as structured data |
+| `apps/auth-messages/src/types.ts` | Screen definitions, scenario lists, shared types |
+| `apps/auth-messages/src/components/SimulatorControls.tsx` | Left sidebar with all toggles |
+| `apps/auth-messages/src/components/MobileFrame.tsx` | iPhone simulator frame |
+| `apps/auth-messages/src/screens/AuthLoadingScreen.tsx` | The critical 8-step sync screen with animations |
+| `apps/auth-messages/src/screens/OfflineSyncScreen.tsx` | 12-phase offline sync bottom sheet |
+| `apps/auth-messages/src/screens/AccessModalScreen.tsx` | Permission error modal with admin action cards |
 
 ---
 
+## Prototype 3: Ad-Hoc Job Tracking
+
+**Location:** `apps/adhoc-job/`
+**URL:** http://localhost:5175
+
+Explores site check-in/check-out flows, per-job time tracking, crew management, and form scenarios with configurable options and scenario snapshots.
+
+### Key files
+
+| File | Purpose |
+|------|---------|
+| `apps/adhoc-job/src/App.tsx` | Complex state machine with job/timer/crew/form management |
+| `apps/adhoc-job/src/components/SimulatorControls.tsx` | Left sidebar with scenario picker and config toggles |
+| `apps/adhoc-job/src/data/scenarios.ts` | Predefined scenario definitions with step-by-step snapshots |
+| `apps/adhoc-job/src/data/jobs.ts` | Job, form, and crew member data |
+| `apps/adhoc-job/src/screens/JobDetailScreen.tsx` | Job details with timer, check-in, status picker |
+| `apps/adhoc-job/src/screens/CrewListScreen.tsx` | Crew member check-in status and leader mode |
+
+---
+
+## Monorepo Structure
+
+```
+low-connectivity-research/
+├── apps/
+│   ├── connectivity/       # Prototype 1: Network feedback
+│   ├── auth-messages/      # Prototype 2: Auth flow copy
+│   └── adhoc-job/          # Prototype 3: Job tracking
+├── index.html              # Landing page (GitHub Pages)
+├── package.json            # Workspace root
+└── .github/workflows/      # CI/CD
+```
+
 ## Tech Stack
 
-Both prototypes use the same stack:
+All prototypes use the same stack:
 
 - **React 19** + **TypeScript**
 - **Vite** (dev server + build)
@@ -151,11 +187,10 @@ Both prototypes use the same stack:
 ## Building for Production
 
 ```bash
-cd prototype && npm run build          # outputs to prototype/dist/
-cd prototype-auth-messages && npm run build   # outputs to prototype-auth-messages/dist/
+npm run build    # builds all apps
 ```
 
-The `dist/` folders contain static files that can be served from any web server or deployed to any static hosting (Netlify, Vercel, GitHub Pages, etc.).
+Each `apps/*/dist/` folder contains static files deployed automatically to GitHub Pages on push to `main`.
 
 ## Related Documents
 

@@ -1,0 +1,19 @@
+{
+  "name": "low-connectivity-research",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:connectivity": "npm run dev -w apps/connectivity",
+    "dev:auth-messages": "npm run dev -w apps/auth-messages",
+    "dev:adhoc-job": "npm run dev -w apps/adhoc-job",
+    "build": "npm run build --workspaces",
+    "build:connectivity": "npm run build -w apps/connectivity",
+    "build:auth-messages": "npm run build -w apps/auth-messages",
+    "build:adhoc-job": "npm run build -w apps/adhoc-job",
+    "lint": "npm run lint --workspaces"
+  }
+}
