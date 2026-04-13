@@ -44,7 +44,6 @@ function buildHistoryForStep(screen: ScreenId, objectType: ObjectType): { screen
 
 function App() {
   const [state, setState] = useState<AppState>(INITIAL_STATE);
-  const [scenarioIndex, setScenarioIndex] = useState(0);
 
   const hasUnread = state.notifications.some(n => !n.isRead);
 
@@ -209,9 +208,10 @@ function App() {
     }
   }, [goBack, navigateTo]);
 
-  // Snapshot loader for configurator
-  const loadSnapshot = useCallback((stepIdx: number) => {
-    const scenario = SCENARIOS[scenarioIndex];
+  // Snapshot loader for configurator — takes scenario + step indices
+  const loadSnapshot = useCallback((scenIdx: number, stepIdx: number) => {
+    const scenario = SCENARIOS[scenIdx];
+    if (!scenario) return;
     const step = scenario.subScenarios[0].steps[stepIdx];
     if (!step) return;
 
@@ -224,21 +224,9 @@ function App() {
       newMessageText: step.newMessageText || '',
       screenHistory: buildHistoryForStep(step.screen, step.currentObjectType),
     });
-  }, [scenarioIndex]);
+  }, []);
 
   const { configuratorConfig } = useConfiguratorConfig({
-    scenarioIndex,
-    onScenarioChange: (idx) => {
-      setScenarioIndex(idx);
-      const firstStep = SCENARIOS[idx].subScenarios[0].steps[0];
-      setState({
-        ...INITIAL_STATE,
-        screen: firstStep.screen,
-        currentObjectId: firstStep.currentObjectId,
-        currentObjectType: firstStep.currentObjectType,
-        activeTab: firstStep.activeTab || 'home',
-      });
-    },
     onLoadSnapshot: loadSnapshot,
   });
 

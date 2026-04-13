@@ -2,108 +2,85 @@ import React from 'react';
 import { SCENARIOS } from '../data/scenarios';
 import type { ConfiguratorConfig, Category, FlowNode, FlowEdge } from 'configurator-ui';
 
-function ScenarioPicker({
-  scenarioIndex,
-  onScenarioChange,
-}: {
-  scenarioIndex: number;
-  onScenarioChange: (idx: number) => void;
-}) {
-  return (
-    <div>
-      <div style={{
-        fontSize: 10, fontWeight: 700, letterSpacing: '1.2px',
-        textTransform: 'uppercase', color: '#666', marginBottom: 6,
-      }}>
-        Scenario
-      </div>
-      <select
-        value={scenarioIndex}
-        onChange={(e) => onScenarioChange(Number(e.target.value))}
-        style={{
-          width: '100%', padding: '8px 10px', borderRadius: 6,
-          background: '#1e1e1e', border: '1px solid #333', color: '#fff',
-          fontSize: 13, fontFamily: 'inherit', cursor: 'pointer', outline: 'none',
-        }}
-      >
-        {SCENARIOS.map((s, i) => (
-          <option key={s.id} value={i}>{s.name}</option>
-        ))}
-      </select>
-    </div>
-  );
+// Build a global step ID: "s{scenarioIdx}-{stepIdx}"
+function makeStepId(scenIdx: number, stepIdx: number) {
+  return `s${scenIdx}-${stepIdx}`;
 }
 
+function parseStepId(id: string): { scenIdx: number; stepIdx: number } | null {
+  const match = id.match(/^s(\d+)-(\d+)$/);
+  if (!match) return null;
+  return { scenIdx: Number(match[1]), stepIdx: Number(match[2]) };
+}
+
+const SCENARIO_ICONS: Record<string, 'checkmark' | 'branch' | 'warning' | 'grid'> = {
+  'job-chat': 'checkmark',
+  'site-chat': 'checkmark',
+  'project-chat': 'checkmark',
+  'notification-flow': 'branch',
+};
+
 export function useConfiguratorConfig({
-  scenarioIndex,
-  onScenarioChange,
   onLoadSnapshot,
 }: {
-  scenarioIndex: number;
-  onScenarioChange: (idx: number) => void;
-  onLoadSnapshot: (stepIdx: number) => void;
+  onLoadSnapshot: (scenIdx: number, stepIdx: number) => void;
 }): { configuratorConfig: ConfiguratorConfig } {
-  const scenario = SCENARIOS[scenarioIndex];
-  const subScenario = scenario.subScenarios[0];
-  const steps = subScenario.steps;
+  const [activeStepId, setActiveStepId] = React.useState(makeStepId(0, 0));
 
-  const [activeStepIdx, setActiveStepIdx] = React.useState(0);
-
-  const stepIds = steps.map((_, i) => `step-${i}`);
-
-  const numberedSteps = steps.map((step, i) => ({
-    id: stepIds[i],
-    label: `${scenarioIndex + 1}.${i} — ${step.label}`,
+  // Build categories — one per scenario, with all steps
+  const categories: Category[] = SCENARIOS.map((scenario, sIdx) => ({
+    id: scenario.id,
+    label: scenario.name,
+    icon: SCENARIO_ICONS[scenario.id] || 'checkmark',
+    steps: scenario.subScenarios[0].steps.map((step, stepIdx) => ({
+      id: makeStepId(sIdx, stepIdx),
+      label: `${sIdx + 1}.${stepIdx} — ${step.label}`,
+    })),
   }));
 
-  const categories: Category[] = [
-    {
-      id: 'main-path',
-      label: 'Main Path',
-      icon: 'checkmark',
-      steps: numberedSteps,
-    },
-  ];
+  // Build flow nodes — all scenarios, each on its own row
+  const flowNodes: FlowNode[] = SCENARIOS.flatMap((scenario, sIdx) =>
+    scenario.subScenarios[0].steps.map((step, stepIdx) => ({
+      id: makeStepId(sIdx, stepIdx),
+      label: step.label,
+      category: scenario.name,
+      row: sIdx,
+    }))
+  );
 
-  const flowNodes: FlowNode[] = numberedSteps.map((step, i) => ({
-    id: step.id,
-    label: steps[i].label,
-    category: 'Main Path',
-    row: 0,
-  }));
-
-  const flowEdges: FlowEdge[] = numberedSteps.slice(0, -1).map((_, i) => ({
-    from: stepIds[i],
-    to: stepIds[i + 1],
-  }));
+  // Build flow edges — connect steps within each scenario
+  const flowEdges: FlowEdge[] = SCENARIOS.flatMap((scenario, sIdx) => {
+    const steps = scenario.subScenarios[0].steps;
+    return steps.slice(0, -1).map((_, stepIdx) => ({
+      from: makeStepId(sIdx, stepIdx),
+      to: makeStepId(sIdx, stepIdx + 1),
+    }));
+  });
 
   const handleStepSelect = (stepId: string) => {
-    const idx = stepIds.indexOf(stepId);
-    if (idx >= 0) {
-      setActiveStepIdx(idx);
-      onLoadSnapshot(idx);
-    }
+    const parsed = parseStepId(stepId);
+    if (!parsed) return;
+    setActiveStepId(stepId);
+    onLoadSnapshot(parsed.scenIdx, parsed.stepIdx);
   };
+
+  // Get current scenario info for branding
+  const parsed = parseStepId(activeStepId);
+  const currentScenario = parsed ? SCENARIOS[parsed.scenIdx] : SCENARIOS[0];
 
   const configuratorConfig: ConfiguratorConfig = {
     branding: {
       streamLabel: 'Chatter',
-      title: scenario.name,
-      description: scenario.description,
+      title: currentScenario.name,
+      description: currentScenario.description,
     },
     categories,
     reference: {
-      label: 'User flow map',
+      label: 'All flows',
       flowNodes,
       flowEdges,
     },
-    customControls: (
-      <ScenarioPicker
-        scenarioIndex={scenarioIndex}
-        onScenarioChange={onScenarioChange}
-      />
-    ),
-    activeStepId: stepIds[activeStepIdx] || 'step-0',
+    activeStepId,
     onStepSelect: handleStepSelect,
   };
 
