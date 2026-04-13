@@ -11,6 +11,7 @@
     "dev:connectivity": "npm run dev -w apps/connectivity",
     "dev:auth-messages": "npm run dev -w apps/auth-messages",
     "dev:adhoc-job": "npm run dev -w apps/adhoc-job",
+    "dev:chatter": "npm run dev -w apps/chatter",
     "build": "npm run build --workspaces",
     "build:connectivity": "npm run build -w apps/connectivity",
     "build:auth-messages": "npm run build -w apps/auth-messages",
