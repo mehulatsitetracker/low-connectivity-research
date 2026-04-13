@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { ConfiguratorLayout } from 'configurator-ui';
 import { MobileFrame } from './components/MobileFrame';
-import { SimulatorControls } from './components/SimulatorControls';
+import { useConfiguratorConfig } from './hooks/useConfiguratorConfig';
 import { JobListScreen } from './screens/JobListScreen';
 import { JobDetailScreen } from './screens/JobDetailScreen';
 import { SiteFormScreen } from './screens/SiteFormScreen';
@@ -40,16 +41,16 @@ interface AppState {
   screen: ScreenId;
   currentJobId: string;
   jobStatuses: Record<string, JobStatus>;
-  jobTimers: Record<string, JobTimer>;  // per-job timer
-  isCheckedIn: boolean;                 // site-level, shared across jobs
+  jobTimers: Record<string, JobTimer>;
+  isCheckedIn: boolean;
   lastCheckIn: string;
   formToggle: boolean;
-  crewStatuses: Record<string, CrewMemberStatus>; // per-member check-in status
+  crewStatuses: Record<string, CrewMemberStatus>;
   isLeader: boolean;
   showStatusPicker: boolean;
   screenHistory: ScreenId[];
-  currentDay: number;            // simulated day counter (1, 2, 3...)
-  hasCheckedOutToday: boolean;   // tracks if user already checked out this day
+  currentDay: number;
+  hasCheckedOutToday: boolean;
 }
 
 const INITIAL_STATE: AppState = {
@@ -89,13 +90,13 @@ function App() {
   // Current job's timer
   const currentTimer = state.jobTimers[state.currentJobId] || { state: 'stopped', accumulated: 0 };
 
-  // Compute crew available from crew statuses (only show in crew/shift scenarios)
+  // Compute crew available from crew statuses
   const isCrewScenario = SCENARIOS[scenarioIndex]?.id === 'crew-working' || SCENARIOS[scenarioIndex]?.id === 'shift-handoff';
   const crewTotal = CREW_MEMBERS.length;
   const crewCheckedIn = Object.values(state.crewStatuses).filter(s => s === 'Checked-In').length;
   const crewAvailable = isCrewScenario ? `${crewCheckedIn}/${crewTotal}` : '';
 
-  // ─── Timer effect (tracks current job's timer) ─────────────
+  // ─── Timer effect ─────────────────────────────────────────
   useEffect(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -149,39 +150,31 @@ function App() {
 
   // ─── Action handler ────────────────────────────────────────
   const handleAction = useCallback((action: string) => {
-    // Navigation
     if (action === 'back') { goBack(); return; }
     if (action === 'go-to-job-list') { navigateTo('job-list'); return; }
 
     if (action.startsWith('select-job:')) {
       const jobId = action.replace('select-job:', '');
       setState(prev => ({
-        ...prev,
-        screen: 'job-detail',
-        currentJobId: jobId,
-        showStatusPicker: false,
+        ...prev, screen: 'job-detail', currentJobId: jobId, showStatusPicker: false,
         screenHistory: [...prev.screenHistory, prev.screen],
       }));
       return;
     }
 
-    // Check-in flow (site-level)
     if (action === 'check-in') {
-      // Block re-check-in if single check-in mode and already checked out today
       if (!config.allowMultipleCheckIn && state.hasCheckedOutToday) return;
       if (config.siteCheckInEnabled) {
         if (config.checkInFormRequired) {
           navigateTo('site-checkin');
         } else {
-          // Skip form, directly check in
           setState(prev => {
             const currentUserName = CREW_MEMBERS.find(m => m.isCurrentUser)?.name;
             const newCrewStatuses = currentUserName
               ? { ...prev.crewStatuses, [currentUserName]: 'Checked-In' as CrewMemberStatus }
               : prev.crewStatuses;
             return {
-              ...prev,
-              isCheckedIn: true,
+              ...prev, isCheckedIn: true,
               lastCheckIn: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               crewStatuses: newCrewStatuses,
             };
@@ -195,7 +188,6 @@ function App() {
         if (config.checkInFormRequired) {
           navigateTo('site-checkout');
         } else {
-          // Auto-pause all running timers on check-out + update crew status
           setState(prev => {
             const pausedTimers = { ...prev.jobTimers };
             for (const jid of Object.keys(pausedTimers)) {
@@ -215,18 +207,14 @@ function App() {
     }
     if (action === 'complete-check-in') {
       setState(prev => {
-        // Update current user's crew status
         const currentUserName = CREW_MEMBERS.find(m => m.isCurrentUser)?.name;
         const newCrewStatuses = currentUserName
           ? { ...prev.crewStatuses, [currentUserName]: 'Checked-In' as CrewMemberStatus }
           : prev.crewStatuses;
         return {
-          ...prev,
-          screen: 'job-detail',
-          isCheckedIn: true,
+          ...prev, screen: 'job-detail', isCheckedIn: true,
           lastCheckIn: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          formToggle: false,
-          crewStatuses: newCrewStatuses,
+          formToggle: false, crewStatuses: newCrewStatuses,
           screenHistory: prev.screenHistory.filter(s => s !== 'site-checkin' && s !== 'checkin-form'),
         };
       });
@@ -245,38 +233,25 @@ function App() {
           ? { ...prev.crewStatuses, [currentUserName]: 'Checked-Out' as CrewMemberStatus }
           : prev.crewStatuses;
         return {
-          ...prev,
-          screen: 'job-detail',
-          isCheckedIn: false,
-          hasCheckedOutToday: true,
-          jobTimers: pausedTimers,
-          crewStatuses: newCrewStatuses,
-          formToggle: false,
+          ...prev, screen: 'job-detail', isCheckedIn: false, hasCheckedOutToday: true,
+          jobTimers: pausedTimers, crewStatuses: newCrewStatuses, formToggle: false,
           screenHistory: prev.screenHistory.filter(s => s !== 'site-checkout' && s !== 'checkout-form'),
         };
       });
       return;
     }
 
-    // Forms
     if (action === 'open-checkin-form') { navigateTo('checkin-form'); return; }
     if (action === 'open-checkout-form') { navigateTo('checkout-form'); return; }
-    if (action === 'toggle-form') {
-      setState(prev => ({ ...prev, formToggle: !prev.formToggle }));
-      return;
-    }
+    if (action === 'toggle-form') { setState(prev => ({ ...prev, formToggle: !prev.formToggle })); return; }
     if (action === 'close-form') { goBack(); return; }
 
-    // Status picker — gated by check-in when siteCheckIn is enabled
     if (action === 'open-status-picker') {
-      if (config.siteCheckInEnabled && !state.isCheckedIn) return; // blocked
+      if (config.siteCheckInEnabled && !state.isCheckedIn) return;
       setState(prev => ({ ...prev, showStatusPicker: true }));
       return;
     }
-    if (action === 'close-status-picker') {
-      setState(prev => ({ ...prev, showStatusPicker: false }));
-      return;
-    }
+    if (action === 'close-status-picker') { setState(prev => ({ ...prev, showStatusPicker: false })); return; }
     if (action.startsWith('set-status:')) {
       const newStatus = action.replace('set-status:', '') as JobStatus;
       setState(prev => {
@@ -284,14 +259,10 @@ function App() {
         const timer = prev.jobTimers[jobId];
         let newTimerState: TimerState = timer.state;
         let newAccumulated = timer.accumulated;
-
         if (newStatus === 'Completed') {
-          if (timer.state === 'running') {
-            newAccumulated = timer.accumulated + elapsed;
-          }
+          if (timer.state === 'running') newAccumulated = timer.accumulated + elapsed;
           newTimerState = 'captured';
         }
-
         return {
           ...prev,
           jobStatuses: { ...prev.jobStatuses, [jobId]: newStatus },
@@ -302,9 +273,8 @@ function App() {
       return;
     }
 
-    // Timer — gated by check-in when siteCheckIn is enabled
     if (action === 'start-timer') {
-      if (config.siteCheckInEnabled && !state.isCheckedIn) return; // blocked
+      if (config.siteCheckInEnabled && !state.isCheckedIn) return;
       updateJobTimer(state.currentJobId, { state: 'running' });
       return;
     }
@@ -314,43 +284,19 @@ function App() {
       return;
     }
 
-    // Day navigation (single check-in mode)
-    if (action === 'next-day') {
-      setState(prev => ({
-        ...prev,
-        currentDay: prev.currentDay + 1,
-        isCheckedIn: false,
-        hasCheckedOutToday: false,
-        lastCheckIn: '',
-      }));
-      return;
-    }
-    if (action === 'prev-day') {
-      setState(prev => ({
-        ...prev,
-        currentDay: Math.max(1, prev.currentDay - 1),
-        isCheckedIn: false,
-        hasCheckedOutToday: false,
-        lastCheckIn: '',
-      }));
-      return;
-    }
+    if (action === 'next-day') { setState(prev => ({ ...prev, currentDay: prev.currentDay + 1, isCheckedIn: false, hasCheckedOutToday: false, lastCheckIn: '' })); return; }
+    if (action === 'prev-day') { setState(prev => ({ ...prev, currentDay: Math.max(1, prev.currentDay - 1), isCheckedIn: false, hasCheckedOutToday: false, lastCheckIn: '' })); return; }
 
-    // Crew
     if (action === 'open-crew-list') { navigateTo('crew-list'); return; }
     if (action === 'crew-update') { goBack(); return; }
     if (action.startsWith('crew-set-status:')) {
-      // Format: crew-set-status:memberName:newStatus
       const parts = action.replace('crew-set-status:', '').split(':');
       const memberName = parts[0];
       const newStatus = parts[1] as CrewMemberStatus;
-      setState(prev => ({
-        ...prev,
-        crewStatuses: { ...prev.crewStatuses, [memberName]: newStatus },
-      }));
+      setState(prev => ({ ...prev, crewStatuses: { ...prev.crewStatuses, [memberName]: newStatus } }));
       return;
     }
-  }, [goBack, navigateTo, elapsed, config, state.isCheckedIn, state.currentJobId, currentTimer, updateJobTimer]);
+  }, [goBack, navigateTo, elapsed, config, state.isCheckedIn, state.currentJobId, currentTimer, updateJobTimer, state.hasCheckedOutToday]);
 
   // ─── Snapshot loader ───────────────────────────────────────
   const loadSnapshot = useCallback((scenIdx: number, subIdx: number, stepIdx: number) => {
@@ -364,11 +310,9 @@ function App() {
 
     const timers = defaultJobTimers();
     timers[step.jobId] = { state: step.timerState, accumulated: step.timerValue };
-
     const statuses = defaultJobStatuses();
     statuses[step.jobId] = step.jobStatus;
 
-    // Compute crew statuses from snapshot's crewAvailable string
     const crewStats = defaultCrewStatuses();
     if (step.crewAvailable) {
       const checkedIn = parseInt(step.crewAvailable.split('/')[0]) || 0;
@@ -378,7 +322,6 @@ function App() {
       }
     }
 
-    // Determine if this is a leader sub-scenario
     const isLeaderSub = sub.id === 'crew-leader';
 
     setState({
@@ -398,12 +341,22 @@ function App() {
     });
   }, []);
 
+  // ─── Configurator adapter ─────────────────────────────────
+  const { configuratorConfig } = useConfiguratorConfig({
+    scenarioIndex,
+    subScenarioIndex,
+    config,
+    onConfigChange: setConfig,
+    onScenarioChange: (idx) => loadSnapshot(idx, 0, 0),
+    onSubScenarioChange: (idx) => loadSnapshot(scenarioIndex, idx, 0),
+    onLoadSnapshot: (stepIdx) => loadSnapshot(scenarioIndex, subScenarioIndex, stepIdx),
+  });
+
   // ─── Render ────────────────────────────────────────────────
   const renderScreen = () => {
     switch (state.screen) {
       case 'job-list':
         return <JobListScreen jobStatuses={state.jobStatuses} onSelectJob={(id) => handleAction(`select-job:${id}`)} />;
-
       case 'job-detail':
         return (
           <JobDetailScreen
@@ -420,82 +373,27 @@ function App() {
             onAction={handleAction}
           />
         );
-
       case 'site-checkin':
-        return (
-          <SiteFormScreen
-            mode="check-in"
-            jobId={state.currentJobId}
-            onOpenForm={() => handleAction('open-checkin-form')}
-            onBack={() => goBack()}
-          />
-        );
-
+        return <SiteFormScreen mode="check-in" jobId={state.currentJobId} onOpenForm={() => handleAction('open-checkin-form')} onBack={() => goBack()} />;
       case 'checkin-form':
-        return (
-          <FormDetailScreen
-            mode="check-in"
-            formToggle={state.formToggle}
-            onToggle={() => handleAction('toggle-form')}
-            onClose={() => handleAction('complete-check-in')}
-          />
-        );
-
+        return <FormDetailScreen mode="check-in" formToggle={state.formToggle} onToggle={() => handleAction('toggle-form')} onClose={() => handleAction('complete-check-in')} />;
       case 'site-checkout':
-        return (
-          <SiteFormScreen
-            mode="check-out"
-            jobId={state.currentJobId}
-            onOpenForm={() => handleAction('open-checkout-form')}
-            onBack={() => goBack()}
-          />
-        );
-
+        return <SiteFormScreen mode="check-out" jobId={state.currentJobId} onOpenForm={() => handleAction('open-checkout-form')} onBack={() => goBack()} />;
       case 'checkout-form':
-        return (
-          <FormDetailScreen
-            mode="check-out"
-            formToggle={state.formToggle}
-            onToggle={() => handleAction('toggle-form')}
-            onClose={() => handleAction('complete-check-out')}
-          />
-        );
-
+        return <FormDetailScreen mode="check-out" formToggle={state.formToggle} onToggle={() => handleAction('toggle-form')} onClose={() => handleAction('complete-check-out')} />;
       case 'crew-list':
-        return (
-          <CrewListScreen
-            crewStatuses={state.crewStatuses}
-            isLeader={state.isLeader}
-            onBack={() => goBack()}
-            onAction={handleAction}
-          />
-        );
-
+        return <CrewListScreen crewStatuses={state.crewStatuses} isLeader={state.isLeader} onBack={() => goBack()} onAction={handleAction} />;
       default:
         return <JobListScreen jobStatuses={state.jobStatuses} onSelectJob={(id) => handleAction(`select-job:${id}`)} />;
     }
   };
 
   return (
-    <>
-      <SimulatorControls
-        scenarioIndex={scenarioIndex}
-        subScenarioIndex={subScenarioIndex}
-        currentScreen={state.screen}
-        currentJobId={state.currentJobId}
-        config={config}
-        currentDay={state.currentDay}
-        onConfigChange={setConfig}
-        onScenarioChange={(idx) => loadSnapshot(idx, 0, 0)}
-        onSubScenarioChange={(idx) => loadSnapshot(scenarioIndex, idx, 0)}
-        onLoadSnapshot={(stepIdx) => loadSnapshot(scenarioIndex, subScenarioIndex, stepIdx)}
-        onReset={() => setState(INITIAL_STATE)}
-        onDayChange={handleAction}
-      />
+    <ConfiguratorLayout config={configuratorConfig}>
       <MobileFrame>
         {renderScreen()}
       </MobileFrame>
-    </>
+    </ConfiguratorLayout>
   );
 }
 

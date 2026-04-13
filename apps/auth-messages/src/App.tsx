@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { ConfiguratorLayout } from 'configurator-ui';
 import { MobileFrame } from './components/MobileFrame';
-import { SimulatorControls } from './components/SimulatorControls';
+import { useAuthConfiguratorConfig } from './hooks/useConfiguratorConfig';
 import { SCREENS, type NetworkState, type UserContext, type CopyMode, type ScreenId } from './types';
 
 // Screen imports
@@ -30,17 +31,10 @@ const SCREEN_COMPONENTS = [
   DeepLinkScreen,
 ] as const;
 
-// Bidirectional mapping: network ↔ scenario per screen.
-// network→scenario: when you toggle network, auto-pick scenario
-// scenario→network: when you pick a scenario, auto-update network indicator
-// Mappings based on low-network-ux-audit.md:
-// - Only map when a scenario is genuinely caused by that network condition
-// - Omit a network state to leave the current scenario unchanged
 const NETWORK_SCENARIO_MAP: Partial<Record<ScreenId, Partial<Record<NetworkState, string>>>> = {
   'reset':             {                                slow: 'slow-device',       good: 'happy' },
   'domain-select':     { offline: 'offline',                                       good: 'happy' },
   'salesforce-login':  { offline: 'network-drops',      slow: 'slow-loading',      good: 'happy' },
-  // vault-modal: scenarios are device-level (biometric), not network-driven
   'login-success':     {                                slow: 'validation-hangs',  good: 'happy' },
   'auth-loading':      { offline: 'connection-drops',   slow: 'slow-3g',           good: 'happy' },
   'offline-sync':      { offline: 'network-lost',       slow: 'phase-fails',       good: 'happy' },
@@ -50,7 +44,6 @@ const NETWORK_SCENARIO_MAP: Partial<Record<ScreenId, Partial<Record<NetworkState
   'deep-link':         { offline: 'auth-fails',                                    good: 'happy' },
 };
 
-// Reverse lookup: given a screen + scenario, what network state does it imply?
 function inferNetworkFromScenario(screenId: ScreenId, selectedScenario: string): NetworkState | null {
   const screenMap = NETWORK_SCENARIO_MAP[screenId];
   if (!screenMap) return null;
@@ -70,7 +63,6 @@ function App() {
   const handleScreenChange = (index: number) => {
     setScreenIndex(index);
     const screen = SCREENS[index];
-    // When switching screen, pick scenario based on current network state if mapped
     const mapped = NETWORK_SCENARIO_MAP[screen.id]?.[networkState];
     setScenario(mapped && screen.scenarios.includes(mapped) ? mapped : screen.scenarios[0]);
   };
@@ -86,7 +78,6 @@ function App() {
 
   const handleScenarioChange = (newScenario: string) => {
     setScenario(newScenario);
-    // Sync network indicator to match what this scenario implies
     const screen = SCREENS[screenIndex];
     const inferred = inferNetworkFromScenario(screen.id, newScenario);
     if (inferred) {
@@ -94,23 +85,23 @@ function App() {
     }
   };
 
+  const configuratorConfig = useAuthConfiguratorConfig({
+    screenIndex,
+    networkState,
+    userContext,
+    copyMode,
+    scenario,
+    onScreenChange: handleScreenChange,
+    onNetworkChange: handleNetworkChange,
+    onUserContextChange: setUserContext,
+    onCopyModeChange: setCopyMode,
+    onScenarioChange: handleScenarioChange,
+  });
+
   const ScreenComponent = SCREEN_COMPONENTS[screenIndex];
 
   return (
-    <>
-      <SimulatorControls
-        currentScreenIndex={screenIndex}
-        networkState={networkState}
-        userContext={userContext}
-        copyMode={copyMode}
-        scenario={scenario}
-        onScreenChange={handleScreenChange}
-        onNetworkChange={handleNetworkChange}
-        onUserContextChange={setUserContext}
-        onCopyModeChange={setCopyMode}
-        onScenarioChange={handleScenarioChange}
-      />
-
+    <ConfiguratorLayout config={configuratorConfig}>
       <MobileFrame>
         <ScreenComponent
           key={`${screenIndex}-${scenario}-${copyMode}-${userContext}`}
@@ -120,7 +111,7 @@ function App() {
           copyMode={copyMode}
         />
       </MobileFrame>
-    </>
+    </ConfiguratorLayout>
   );
 }
 

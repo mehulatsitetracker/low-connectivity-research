@@ -4,21 +4,21 @@
     {
       "name": "prototype",
       "runtimeExecutable": "/Users/mehul.k/.nvm/versions/node/v24.12.0/bin/node",
-      "runtimeArgs": ["node_modules/.bin/vite", "--host"],
+      "runtimeArgs": ["../../node_modules/.bin/vite", "--host"],
       "port": 5173,
       "cwd": "apps/connectivity"
     },
     {
       "name": "auth-messages",
       "runtimeExecutable": "/Users/mehul.k/.nvm/versions/node/v24.12.0/bin/node",
-      "runtimeArgs": ["node_modules/.bin/vite", "--port", "5174", "--host"],
+      "runtimeArgs": ["../../node_modules/.bin/vite", "--port", "5174", "--host"],
       "port": 5174,
       "cwd": "apps/auth-messages"
     },
     {
       "name": "adhoc-job",
       "runtimeExecutable": "/Users/mehul.k/.nvm/versions/node/v24.12.0/bin/node",
-      "runtimeArgs": ["node_modules/.bin/vite", "--port", "5175", "--host"],
+      "runtimeArgs": ["../../node_modules/.bin/vite", "--port", "5175", "--host"],
       "port": 5175,
       "cwd": "apps/adhoc-job"
     }
