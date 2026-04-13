@@ -34,7 +34,7 @@ const iconForItem = (icon: string) => {
 
 export function MenuScreen({ hasUnread, activeTab, onAction }: MenuScreenProps) {
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: colors.background }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: colors.background, overflow: 'hidden' }}>
       {/* Header */}
       <div style={{
         background: colors.topBar, padding: '12px 16px',
