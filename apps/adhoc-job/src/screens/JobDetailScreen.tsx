@@ -140,7 +140,7 @@ export const JobDetailScreen: React.FC<Props> = ({
                     <path d="M23 11h-6"/>
                     {!isCheckedIn && <path d="M20 8v6"/>}
                   </svg>
-                  {isCheckedIn ? 'No - Long press to check out' : 'Yes - Check into site'}
+                  {isCheckedIn ? 'No - Check out of site' : 'Yes - Check into site'}
                 </button>
               )}
             </>
