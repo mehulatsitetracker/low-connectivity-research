@@ -1,7 +1,6 @@
 import { ChevronLeft, Star, MoreVertical, MapPin, ExternalLink, ChevronRight, FileText, UserPlus, Play, ChevronDown } from 'lucide-react';
 import { colors, radii } from '../theme';
 import { BottomNav } from '../components/BottomNav';
-import { ConversationsWidget } from '../components/ConversationsWidget';
 import { FormsWidget } from '../components/FormsWidget';
 import { MessageIconButton } from '../components/MessageIconButton';
 import { JOBS } from '../data/objects';
@@ -153,10 +152,6 @@ export function JobDetailScreen({ jobId, messages, activeTab, onAction, unreadCo
           <FormsWidget forms={JOB_FORMS} />
         </div>
 
-        {/* Conversations Widget */}
-        <div style={{ margin: '0 12px 12px' }}>
-          <ConversationsWidget messages={messages} onTap={() => onAction('open-chat')} />
-        </div>
       </div>
 
       <BottomNav activeTab={activeTab} onTabChange={(tab) => onAction(`tab-${tab}`)} />

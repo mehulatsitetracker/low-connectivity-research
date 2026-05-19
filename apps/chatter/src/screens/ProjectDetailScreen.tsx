@@ -1,7 +1,6 @@
 import { ChevronLeft, Star, MoreVertical, ChevronRight } from 'lucide-react';
 import { colors } from '../theme';
 import { BottomNav } from '../components/BottomNav';
-import { ConversationsWidget } from '../components/ConversationsWidget';
 import { FormsWidget } from '../components/FormsWidget';
 import { MessageIconButton } from '../components/MessageIconButton';
 import { PROJECTS } from '../data/objects';
@@ -78,10 +77,6 @@ export function ProjectDetailScreen({ projectId, messages, activeTab, onAction, 
           />
         </div>
 
-        {/* Conversations Widget */}
-        <div style={{ margin: '0 12px 12px' }}>
-          <ConversationsWidget messages={messages} onTap={() => onAction('open-chat')} />
-        </div>
       </div>
 
       <BottomNav activeTab={activeTab} onTabChange={(tab) => onAction(`tab-${tab}`)} />
