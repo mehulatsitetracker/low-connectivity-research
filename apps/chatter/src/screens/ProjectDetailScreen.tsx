@@ -4,17 +4,16 @@ import { BottomNav } from '../components/BottomNav';
 import { FormsWidget } from '../components/FormsWidget';
 import { MessageIconButton } from '../components/MessageIconButton';
 import { PROJECTS } from '../data/objects';
-import type { ActiveTab, ChatMessage } from '../types';
+import type { ActiveTab } from '../types';
 
 interface ProjectDetailScreenProps {
   projectId: string;
-  messages: ChatMessage[];
   activeTab: ActiveTab;
   onAction: (action: string) => void;
   unreadCount?: number;
 }
 
-export function ProjectDetailScreen({ projectId, messages, activeTab, onAction, unreadCount = 0 }: ProjectDetailScreenProps) {
+export function ProjectDetailScreen({ projectId, activeTab, onAction, unreadCount = 0 }: ProjectDetailScreenProps) {
   const project = PROJECTS.find(p => p.id === projectId);
   if (!project) return null;
 

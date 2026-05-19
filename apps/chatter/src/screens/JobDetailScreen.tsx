@@ -4,11 +4,10 @@ import { BottomNav } from '../components/BottomNav';
 import { FormsWidget } from '../components/FormsWidget';
 import { MessageIconButton } from '../components/MessageIconButton';
 import { JOBS } from '../data/objects';
-import type { ActiveTab, ChatMessage } from '../types';
+import type { ActiveTab } from '../types';
 
 interface JobDetailScreenProps {
   jobId: string;
-  messages: ChatMessage[];
   activeTab: ActiveTab;
   onAction: (action: string) => void;
   unreadCount?: number;
@@ -20,7 +19,7 @@ const JOB_FORMS = [
   { name: 'Daily Report', status: 'Not Started' },
 ];
 
-export function JobDetailScreen({ jobId, messages, activeTab, onAction, unreadCount = 0 }: JobDetailScreenProps) {
+export function JobDetailScreen({ jobId, activeTab, onAction, unreadCount = 0 }: JobDetailScreenProps) {
   const job = JOBS.find(j => j.id === jobId);
   if (!job) return null;
 

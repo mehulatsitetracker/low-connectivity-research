@@ -4,17 +4,16 @@ import { BottomNav } from '../components/BottomNav';
 import { FormsWidget } from '../components/FormsWidget';
 import { MessageIconButton } from '../components/MessageIconButton';
 import { SITES } from '../data/objects';
-import type { ActiveTab, ChatMessage } from '../types';
+import type { ActiveTab } from '../types';
 
 interface SiteDetailScreenProps {
   siteId: string;
-  messages: ChatMessage[];
   activeTab: ActiveTab;
   onAction: (action: string) => void;
   unreadCount?: number;
 }
 
-export function SiteDetailScreen({ siteId, messages, activeTab, onAction, unreadCount = 0 }: SiteDetailScreenProps) {
+export function SiteDetailScreen({ siteId, activeTab, onAction, unreadCount = 0 }: SiteDetailScreenProps) {
   const site = SITES.find(s => s.id === siteId);
   if (!site) return null;
 
