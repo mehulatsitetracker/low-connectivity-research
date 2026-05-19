@@ -254,11 +254,11 @@ function App() {
       case 'menu':
         return <MenuScreen hasUnread={hasUnread} activeTab={state.activeTab} onAction={handleAction} />;
       case 'all-jobs':
-        return <AllJobsScreen activeTab={state.activeTab} onAction={handleAction} />;
+        return <AllJobsScreen activeTab={state.activeTab} onAction={handleAction} unreadCounts={state.unreadCounts} />;
       case 'all-sites':
-        return <AllSitesScreen activeTab={state.activeTab} onAction={handleAction} />;
+        return <AllSitesScreen activeTab={state.activeTab} onAction={handleAction} unreadCounts={state.unreadCounts} />;
       case 'all-projects':
-        return <AllProjectsScreen activeTab={state.activeTab} onAction={handleAction} />;
+        return <AllProjectsScreen activeTab={state.activeTab} onAction={handleAction} unreadCounts={state.unreadCounts} />;
       case 'job-detail':
         return <JobDetailScreen jobId={state.currentObjectId} messages={currentMessages} activeTab={state.activeTab} onAction={handleAction} unreadCount={state.unreadCounts[state.currentObjectId] ?? 0} />;
       case 'site-detail':

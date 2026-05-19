@@ -9,9 +9,10 @@ import type { ActiveTab } from '../types';
 interface AllJobsScreenProps {
   activeTab: ActiveTab;
   onAction: (action: string) => void;
+  unreadCounts?: Record<string, number>;
 }
 
-export function AllJobsScreen({ activeTab, onAction }: AllJobsScreenProps) {
+export function AllJobsScreen({ activeTab, onAction, unreadCounts }: AllJobsScreenProps) {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: colors.background }}>
       <TopBar title="All Jobs" onBack={() => onAction('back')} showDropdown showPlus />
@@ -28,6 +29,7 @@ export function AllJobsScreen({ activeTab, onAction }: AllJobsScreenProps) {
                 { label: 'Status', value: job.status },
               ]}
               onClick={() => onAction(`select-job:${job.id}`)}
+              unread={(unreadCounts?.[job.id] ?? 0) > 0}
             />
           ))}
         </div>

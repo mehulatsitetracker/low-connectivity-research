@@ -9,9 +9,10 @@ import type { ActiveTab } from '../types';
 interface AllProjectsScreenProps {
   activeTab: ActiveTab;
   onAction: (action: string) => void;
+  unreadCounts?: Record<string, number>;
 }
 
-export function AllProjectsScreen({ activeTab, onAction }: AllProjectsScreenProps) {
+export function AllProjectsScreen({ activeTab, onAction, unreadCounts }: AllProjectsScreenProps) {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: colors.background }}>
       <TopBar title="All New Build Pr..." onBack={() => onAction('back')} showDropdown showPlus />
@@ -29,6 +30,7 @@ export function AllProjectsScreen({ activeTab, onAction }: AllProjectsScreenProp
                 { label: 'Project Type', value: proj.type },
               ]}
               onClick={() => onAction(`select-project:${proj.id}`)}
+              unread={(unreadCounts?.[proj.id] ?? 0) > 0}
             />
           ))}
         </div>

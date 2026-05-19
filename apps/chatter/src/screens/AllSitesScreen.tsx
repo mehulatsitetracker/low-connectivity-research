@@ -9,9 +9,10 @@ import type { ActiveTab } from '../types';
 interface AllSitesScreenProps {
   activeTab: ActiveTab;
   onAction: (action: string) => void;
+  unreadCounts?: Record<string, number>;
 }
 
-export function AllSitesScreen({ activeTab, onAction }: AllSitesScreenProps) {
+export function AllSitesScreen({ activeTab, onAction, unreadCounts }: AllSitesScreenProps) {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: colors.background }}>
       <TopBar title="All Sites" onBack={() => onAction('back')} showDropdown showPlus />
@@ -29,6 +30,7 @@ export function AllSitesScreen({ activeTab, onAction }: AllSitesScreenProps) {
                 { label: 'Site Type', value: site.type },
               ]}
               onClick={() => onAction(`select-site:${site.id}`)}
+              unread={(unreadCounts?.[site.id] ?? 0) > 0}
             />
           ))}
         </div>

@@ -5,9 +5,10 @@ interface ObjectCardProps {
   meta?: { label: string; value: string }[];
   icon?: React.ReactNode;
   onClick: () => void;
+  unread?: boolean;
 }
 
-export function ObjectCard({ title, meta, icon, onClick }: ObjectCardProps) {
+export function ObjectCard({ title, meta, icon, onClick, unread }: ObjectCardProps) {
   return (
     <div
       onClick={onClick}
@@ -25,6 +26,12 @@ export function ObjectCard({ title, meta, icon, onClick }: ObjectCardProps) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: meta?.length ? 8 : 0 }}>
         {icon}
         <span style={{ fontSize: 15, fontWeight: 600, color: colors.textPrimary }}>{title}</span>
+        {unread && (
+          <div style={{
+            width: 8, height: 8, borderRadius: '50%',
+            background: colors.error, marginLeft: 6,
+          }} />
+        )}
       </div>
       {meta?.map(m => (
         <div key={m.label} style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 1.6 }}>
