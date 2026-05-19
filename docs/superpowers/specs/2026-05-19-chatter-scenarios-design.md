@@ -52,17 +52,20 @@ type Message = {
   id: string;
   senderId: string;
   // ...existing fields...
-  parentId?: string;       // top-level messages: undefined; replies: parent's id
-  replyCount?: number;     // computed for parents; 0 or undefined for replies
-  lastReplyAt?: string;    // for the "Last reply Xm ago" caption
-  reactions?: ReactionGroup[];
+  parentId?: string;            // top-level messages: undefined; replies: parent's id
+  replyCount?: number;          // for parents; 0 or undefined for replies
+  lastReplyAt?: string;         // for the "Last reply Xm ago" caption
+  reactions?: ReactionGroup[];  // see ReactionGroup below
+  failed?: boolean;             // send / attachment failure flag for inline retry UI
 }
 
 type ReactionGroup = {
-  emoji: string;           // "👍" | "❤️" | etc., or "like" for the disabled-org fallback
-  userIds: string[];       // who reacted; count derived from .length
+  emoji: string;   // "👍" | "❤️" | "😂" | "🎉" | "👀" | "✅" | "like" (org-disabled fallback)
+  userIds: string[]; // who reacted; count derived from .length
 }
 ```
+
+This `ReactionGroup` shape is the canonical reactions data model — referenced by `Message.reactions`, by `ReactionPills`, and by the `MessageContextMenu` reaction strip.
 
 **Main chat UI**
 - A top-level message with `replyCount > 0` renders a small thread affordance under its bubble: `🧵 3 replies · Last reply 2m ago`. Tap → opens thread view.
@@ -211,8 +214,16 @@ Each is a top-level entry in `SCENARIOS` with `subScenarios[].steps[]`:
 
 ### Touch up existing scenarios
 
-- Any step landing on Home: ensure the new Home (without `ConversationsWidget`) renders correctly.
-- Any step on record detail: include the new `MessageIconButton` with the appropriate `unreadCount`.
+The existing `SCENARIOS` array in `data/scenarios.ts` contains four top-level entries: `job-chat`, `site-chat`, `project-chat`, `notification-flow` (each with one `default` sub-scenario). All four touch Home and/or record-detail screens and need light updates:
+
+| Scenario ID | Steps touching Home | Steps touching record detail | Required updates |
+|---|---|---|---|
+| `job-chat` | yes | `job-detail` | Home renders without `ConversationsWidget`; `job-detail` step shows `MessageIconButton`; set `unreadCounts` to demo a badge |
+| `site-chat` | yes (via menu) | `site-detail` | Same pattern as job-chat |
+| `project-chat` | yes (via menu) | `project-detail` | Same pattern as job-chat |
+| `notification-flow` | yes | n/a | Home renders without `ConversationsWidget` |
+
+No other functional behavior in these scenarios changes — only the new IA chrome is layered on.
 
 ### Step model expansion
 
@@ -274,9 +285,13 @@ type ScenarioStep = {
 - `HomeScreen`, `AllJobs/Sites/ProjectsScreen` — remove ConversationsWidget references; add list-load-fail and skeleton support; dots on object rows.
 
 **State / types**
-- `types.ts` — extend `Message`, `AppState`, `ScenarioStep` per above.
-- `data/messages.ts` — add a few sample threads (parent + replies) and reactions to seed the prototype.
-- `data/scenarios.ts` — append the 7 new scenarios; touch up existing where needed.
+- `types.ts` — extend `Message`, `AppState`, `ScenarioStep`, plus add `ReactionGroup`, per above.
+- `data/messages.ts` — add seed data:
+  - **≥1 record** with a thread (parent message + 3 replies) so the threading scenario has real content.
+  - **≥2 messages** with reactions (one with a single reaction, one with multiple distinct reactions like 👍×2 and ❤️×1) so the reactions scenario can demo both single- and multi-emoji pill rendering.
+  - **≥1 record** with no messages, reserved for the empty-state scenario (don't double-up with seeded records).
+  - **≥1 message** with `failed: true` to drive the inline send-failure UI without a runtime fail simulation.
+- `data/scenarios.ts` — append the 7 new scenarios; touch up the 4 existing scenarios per the table above.
 
 ---
 
