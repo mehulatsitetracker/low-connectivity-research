@@ -27,6 +27,12 @@ const INITIAL_STATE: AppState = {
   notifications: INITIAL_NOTIFICATIONS,
   newMessageText: '',
   chatNotifications: {},
+  // New:
+  replyText: '',
+  network: 'online',
+  loading: {},
+  reactionsEnabled: true,
+  unreadCounts: {},
 };
 
 function buildHistoryForStep(screen: ScreenId, objectType: ObjectType): { screen: ScreenId; objectId: string; objectType: ObjectType }[] {
@@ -39,6 +45,7 @@ function buildHistoryForStep(screen: ScreenId, objectType: ObjectType): { screen
     return [{ screen: 'home', objectId: '', objectType }];
   if (screen === 'chat')
     return [{ screen: 'home', objectId: '', objectType }];
+  if (screen === 'thread') return [{ screen: 'home', objectId: '', objectType }, { screen: 'chat', objectId: '', objectType }];
   return [];
 }
 
@@ -223,6 +230,14 @@ function App() {
       activeTab: step.activeTab || 'home',
       newMessageText: step.newMessageText || '',
       screenHistory: buildHistoryForStep(step.screen, step.currentObjectType),
+      // New:
+      threadId: step.threadId,
+      replyText: step.replyText || '',
+      network: step.network || 'online',
+      loading: step.loading || {},
+      errorState: step.errorState,
+      reactionsEnabled: step.reactionsEnabled ?? true,
+      unreadCounts: step.unreadCounts || {},
     });
   }, []);
 
