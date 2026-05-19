@@ -8,6 +8,8 @@ import { EmptyChat } from '../components/EmptyChat';
 import { FullScreenError } from '../components/FullScreenError';
 import { InlineRetry } from '../components/InlineRetry';
 import { ComposerBanner } from '../components/ComposerBanner';
+import { MessageContextMenu } from '../components/MessageContextMenu';
+import { Toast } from '../components/Toast';
 import { getObjectName } from '../data/objects';
 import { ChevronLeft, Bell, BellOff, BellRing } from 'lucide-react';
 import type { ChatMessage, AppState } from '../types';
@@ -117,14 +119,24 @@ function NotificationModal({
 export function ChatScreen({
   objectId, objectType, messages, newMessageText, notificationsEnabled,
   onAction, onMessageChange,
-  network = 'online', loading, errorState, reactionsEnabled = true,
+  network = 'online', loading, errorState, reactionsEnabled = true, toast,
 }: ChatScreenProps) {
   const title = getObjectName(objectId, objectType);
   const [showModal, setShowModal] = useState(false);
+  const [menuForId, setMenuForId] = useState<string | null>(null);
 
   const containerStyle: React.CSSProperties = {
     flex: 1, display: 'flex', flexDirection: 'column',
     background: colors.surface, position: 'relative',
+  };
+
+  // Reaction-fail interception: when errorState === 'reaction-fail', reroute toggle-reaction to simulate failure
+  const messageOnAction = (a: string) => {
+    if (errorState === 'reaction-fail' && a.startsWith('toggle-reaction:')) {
+      onAction(a.replace('toggle-reaction:', 'simulate-reaction-fail:'));
+      return;
+    }
+    onAction(a);
   };
 
   const header = (
@@ -189,6 +201,7 @@ export function ChatScreen({
         onChange={onMessageChange}
         onSend={() => onAction('send-message')}
         onSendWithAttachment={(atts) => onAction(`send-attachments:${JSON.stringify(atts.map(a => ({ name: a.name, type: a.type })))}`)}
+        mentionSearchError={errorState === 'mention-fail'}
       />
     );
 
@@ -209,12 +222,22 @@ export function ChatScreen({
               key={msg.id}
               message={msg}
               reactionsEnabled={reactionsEnabled}
-              onAction={onAction}
+              onAction={messageOnAction}
+              onLongPress={() => setMenuForId(msg.id)}
             />
           ))
         )}
       </div>
       {composer}
+      {menuForId && (
+        <MessageContextMenu
+          messageId={menuForId}
+          isOwn={(messages.find(m => m.id === menuForId)?.senderId) === 'current-user'}
+          reactionsEnabled={reactionsEnabled}
+          onClose={() => setMenuForId(null)}
+          onAction={messageOnAction}
+        />
+      )}
       {showModal && (
         <NotificationModal
           isEnabled={notificationsEnabled}
@@ -225,6 +248,7 @@ export function ChatScreen({
           onCancel={() => setShowModal(false)}
         />
       )}
+      {toast && <Toast message={toast.message} tone={toast.tone} onDismiss={() => onAction('dismiss-toast')} />}
     </div>
   );
 }
