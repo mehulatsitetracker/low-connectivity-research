@@ -3,6 +3,7 @@ import { colors, radii } from '../theme';
 import { BottomNav } from '../components/BottomNav';
 import { ConversationsWidget } from '../components/ConversationsWidget';
 import { FormsWidget } from '../components/FormsWidget';
+import { MessageIconButton } from '../components/MessageIconButton';
 import { JOBS } from '../data/objects';
 import type { ActiveTab, ChatMessage } from '../types';
 
@@ -11,6 +12,7 @@ interface JobDetailScreenProps {
   messages: ChatMessage[];
   activeTab: ActiveTab;
   onAction: (action: string) => void;
+  unreadCount?: number;
 }
 
 const JOB_FORMS = [
@@ -19,7 +21,7 @@ const JOB_FORMS = [
   { name: 'Daily Report', status: 'Not Started' },
 ];
 
-export function JobDetailScreen({ jobId, messages, activeTab, onAction }: JobDetailScreenProps) {
+export function JobDetailScreen({ jobId, messages, activeTab, onAction, unreadCount = 0 }: JobDetailScreenProps) {
   const job = JOBS.find(j => j.id === jobId);
   if (!job) return null;
 
@@ -40,6 +42,7 @@ export function JobDetailScreen({ jobId, messages, activeTab, onAction }: JobDet
           Job
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <MessageIconButton unreadCount={unreadCount} onClick={() => onAction('open-chat')} />
           <Star size={22} color="#fff" strokeWidth={1.5} style={{ opacity: 0.8 }} />
           <MoreVertical size={22} color="#fff" fill="#fff" style={{ opacity: 0.8 }} />
         </div>

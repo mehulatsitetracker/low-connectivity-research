@@ -3,6 +3,7 @@ import { colors, radii } from '../theme';
 import { BottomNav } from '../components/BottomNav';
 import { ConversationsWidget } from '../components/ConversationsWidget';
 import { FormsWidget } from '../components/FormsWidget';
+import { MessageIconButton } from '../components/MessageIconButton';
 import { SITES } from '../data/objects';
 import type { ActiveTab, ChatMessage } from '../types';
 
@@ -11,9 +12,10 @@ interface SiteDetailScreenProps {
   messages: ChatMessage[];
   activeTab: ActiveTab;
   onAction: (action: string) => void;
+  unreadCount?: number;
 }
 
-export function SiteDetailScreen({ siteId, messages, activeTab, onAction }: SiteDetailScreenProps) {
+export function SiteDetailScreen({ siteId, messages, activeTab, onAction, unreadCount = 0 }: SiteDetailScreenProps) {
   const site = SITES.find(s => s.id === siteId);
   if (!site) return null;
 
@@ -34,6 +36,7 @@ export function SiteDetailScreen({ siteId, messages, activeTab, onAction }: Site
           {site.name}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <MessageIconButton unreadCount={unreadCount} onClick={() => onAction('open-chat')} />
           <Star size={22} color="#fff" strokeWidth={1.5} style={{ opacity: 0.8 }} />
           <MoreVertical size={22} color="#fff" fill="#fff" style={{ opacity: 0.8 }} />
         </div>

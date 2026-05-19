@@ -260,11 +260,11 @@ function App() {
       case 'all-projects':
         return <AllProjectsScreen activeTab={state.activeTab} onAction={handleAction} />;
       case 'job-detail':
-        return <JobDetailScreen jobId={state.currentObjectId} messages={currentMessages} activeTab={state.activeTab} onAction={handleAction} />;
+        return <JobDetailScreen jobId={state.currentObjectId} messages={currentMessages} activeTab={state.activeTab} onAction={handleAction} unreadCount={state.unreadCounts[state.currentObjectId] ?? 0} />;
       case 'site-detail':
-        return <SiteDetailScreen siteId={state.currentObjectId} messages={currentMessages} activeTab={state.activeTab} onAction={handleAction} />;
+        return <SiteDetailScreen siteId={state.currentObjectId} messages={currentMessages} activeTab={state.activeTab} onAction={handleAction} unreadCount={state.unreadCounts[state.currentObjectId] ?? 0} />;
       case 'project-detail':
-        return <ProjectDetailScreen projectId={state.currentObjectId} messages={currentMessages} activeTab={state.activeTab} onAction={handleAction} />;
+        return <ProjectDetailScreen projectId={state.currentObjectId} messages={currentMessages} activeTab={state.activeTab} onAction={handleAction} unreadCount={state.unreadCounts[state.currentObjectId] ?? 0} />;
       case 'chat':
         return (
           <ChatScreen
