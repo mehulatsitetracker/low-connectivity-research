@@ -51,6 +51,42 @@ export const SCENARIOS: ScenarioDef[] = [
     }],
   },
   {
+    id: 'threading',
+    name: 'Threading',
+    description: 'Open a thread, read replies, reply in thread, return',
+    subScenarios: [{
+      id: 'default',
+      name: 'Default',
+      steps: [
+        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: 'Chat with thread indicator' },
+        { screen: 'thread', currentObjectId: 'J-004892', currentObjectType: 'job', threadId: 'msg-thread-parent-1', label: 'Thread view' },
+        { screen: 'thread', currentObjectId: 'J-004892', currentObjectType: 'job', threadId: 'msg-thread-parent-1', replyText: "I'll grab coffee on the way.", label: 'Type a reply' },
+        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: 'Back to chat — replyCount updated' },
+      ],
+    }],
+  },
+  {
+    id: 'reactions',
+    name: 'Reactions',
+    description: 'Full reaction set vs. likes-only (org permission)',
+    subScenarios: [
+      {
+        id: 'enabled',
+        name: 'Org enabled',
+        steps: [
+          { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: 'Chat with reactions visible', reactionsEnabled: true },
+        ],
+      },
+      {
+        id: 'disabled',
+        name: 'Org disabled (likes only)',
+        steps: [
+          { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: 'Chat with likes only', reactionsEnabled: false },
+        ],
+      },
+    ],
+  },
+  {
     id: 'notification-flow',
     name: 'Notification Flow',
     description: 'Home → bell → notifications → tap notification → chat → back to notifications',
