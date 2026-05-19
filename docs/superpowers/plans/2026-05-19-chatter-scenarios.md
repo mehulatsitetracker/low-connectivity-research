@@ -134,12 +134,26 @@ Add these fields (mirroring `FlowStep` but as live state):
   toast?: { message: string; tone?: 'error' | 'info' };
 ```
 
-- [ ] **Step 6: Run typecheck**
+- [ ] **Step 6: Extend `Notification` interface with optional `threadId`**
+
+Add to `Notification`:
+
+```ts
+  threadId?: string;
+```
+
+This lets notifications deep-link into thread view (tapping a notification with a `threadId` lands on the parent's thread). Wire-up is downstream; here we just add the field.
+
+- [ ] **Step 7: DO NOT modify the existing `ActiveTab` union**
+
+The spec re-declares `activeTab?: 'home' | 'notifications'`, but the existing `ActiveTab = 'home' | 'map' | 'menu'` is used by existing scenarios (e.g., `activeTab: 'menu'`). Keep `ActiveTab` exactly as-is — `FlowStep.activeTab?: ActiveTab` continues to work for both old and new scenarios. If the implementer touches `ActiveTab`, the existing scenarios break.
+
+- [ ] **Step 8: Run typecheck**
 
 Run: `cd apps/chatter && pnpm tsc --noEmit` (or whatever the workspace command is)
 Expected: errors only in files that USE these types (App.tsx, ChatScreen.tsx) — that's fine; we'll fix as we go.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add apps/chatter/src/types.ts
@@ -593,6 +607,8 @@ git commit -m "Add MessageIconButton with unread count badge"
 **Files:**
 - Modify: `apps/chatter/src/components/TopBar.tsx`
 
+**Note:** All three record-detail screens currently inline their own TopBar (they do NOT render the `TopBar` component). So the slot added here may not be used by Task 3.3 — Task 3.3 injects `MessageIconButton` directly into the inlined header instead. Keep this task lightweight; the slot is forward-compatible if any screen later switches to the shared component.
+
 - [ ] **Step 1: Add slot prop**
 
 Add to `TopBarProps`:
@@ -625,6 +641,8 @@ git commit -m "Add messageIcon slot to TopBar"
 - Modify: `apps/chatter/src/screens/SiteDetailScreen.tsx`
 - Modify: `apps/chatter/src/screens/ProjectDetailScreen.tsx`
 
+**Context:** All three detail screens inline their own header (`height: 44, background: colors.topBar`). Inject `MessageIconButton` directly into each one's right-side action group — do NOT refactor them to use the shared `TopBar` component (that's out of scope for this prototype iteration).
+
 - [ ] **Step 1: Accept `unreadCount` prop in each detail screen**
 
 For each detail screen, add to props:
@@ -633,15 +651,13 @@ For each detail screen, add to props:
   unreadCount?: number;
 ```
 
-Locate the screen's `TopBar` usage and add the `messageIcon` prop. If the screen doesn't currently render the TopBar component but inlines its own header (mirror the ChatScreen pattern if so), inject `MessageIconButton` into the right-side action group.
+Find the inlined header in each detail screen (look for `height: 44, background: colors.topBar`). Add `MessageIconButton` to the right-aligned actions group, e.g.:
 
 ```tsx
 import { MessageIconButton } from '../components/MessageIconButton';
 // ...
-<TopBar
-  /* existing props */
-  messageIcon={<MessageIconButton unreadCount={unreadCount} onClick={() => onAction('open-chat')} />}
-/>
+{/* inside the right-side actions of the inlined header */}
+<MessageIconButton unreadCount={unreadCount} onClick={() => onAction('open-chat')} />
 ```
 
 - [ ] **Step 2: Pass `unreadCount` from `App.tsx`**
@@ -1812,7 +1828,11 @@ git commit -m "Add threading and reactions scenarios"
 **Files:**
 - Modify: `apps/chatter/src/data/scenarios.ts`
 
-- [ ] **Step 1: Append `empty-chat` scenario**
+- [ ] **Step 1: Pick a concrete empty-record id**
+
+Before writing the scenario, choose an existing record id from `data/objects.ts` that does NOT appear as a key in `INITIAL_MESSAGES` after Task 7.1's seeding. Suggested: the second site in `SITES[1]` or the second project in `PROJECTS[1]` — pick whichever is least crowded. Use its real id (e.g., `site-2` or `P-000009`) below.
+
+- [ ] **Step 2: Append `empty-chat` scenario using the concrete id**
 
 ```ts
 {
@@ -1823,16 +1843,16 @@ git commit -m "Add threading and reactions scenarios"
     id: 'default',
     name: 'Default',
     steps: [
-      // Replace with the empty record's id; example uses 'site-empty' as a placeholder.
-      { screen: 'chat', currentObjectId: 'site-empty', currentObjectType: 'site', label: 'Empty chat with chips' },
+      // Use the concrete record id you chose in Step 1.
+      { screen: 'chat', currentObjectId: '<chosen-id>', currentObjectType: '<job|site|project>', label: 'Empty chat with chips' },
     ],
   }],
 },
 ```
 
-(If no empty record exists in seed data, add one in `data/messages.ts` by simply not seeding messages for the chosen objectId; ensure `data/objects.ts` includes that record so `getObjectName` resolves.)
+(If no suitable empty record exists, add one to `data/objects.ts` so `getObjectName` resolves. Do NOT add an entry for it to `INITIAL_MESSAGES` — that's what makes it empty.)
 
-- [ ] **Step 2: Append `offline-chat` scenario**
+- [ ] **Step 3: Append `offline-chat` scenario**
 
 ```ts
 {
@@ -1851,7 +1871,7 @@ git commit -m "Add threading and reactions scenarios"
 },
 ```
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add apps/chatter/src/data/scenarios.ts
@@ -1918,7 +1938,22 @@ git commit -m "Add empty-chat and offline-chat scenarios"
 
 For #4 (attachment-fail): the failed-message seed in `data/messages.ts` carries the attachment-failure UI. If not visually distinct from #1, add a second seeded failed message with an `attachment` field set.
 
-For #5 (reaction-fail): when the user clicks any reaction on this step, dispatch `simulate-reaction-fail:...` instead of `toggle-reaction:...`. Simplest path: add a per-step flag handled by ChatScreen so reaction taps dispatch the simulate action when `errorState === 'reaction-fail'`.
+For #5 (reaction-fail): the simplest wiring is in `ChatScreen` — when constructing the `onAction` handler passed to `ChatMessageComponent`, intercept `'toggle-reaction:*'` actions and rewrite them to `'simulate-reaction-fail:*'` when `errorState === 'reaction-fail'`. Concretely:
+
+```tsx
+// In ChatScreen, just before rendering messages:
+const messageOnAction = (a: string) => {
+  if (errorState === 'reaction-fail' && a.startsWith('toggle-reaction:')) {
+    onAction(a.replace('toggle-reaction:', 'simulate-reaction-fail:'));
+    return;
+  }
+  onAction(a);
+};
+
+// Pass messageOnAction to ChatMessageComponent instead of onAction.
+```
+
+This keeps the rewrite local to ChatScreen and doesn't pollute every reaction handler with error-state awareness.
 
 - [ ] **Step 3: Commit**
 
