@@ -2,9 +2,9 @@ import type { ChatMessage } from '../types';
 
 export const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
   'J-004892': [
-    { id: 'm1', senderId: 'u1', senderName: 'Jane Smith', senderInitials: 'JS', text: 'Walk-through is still on for 2pm if that works.', timestamp: '4:50 PM', date: 'Yesterday', objectId: 'J-004892', objectType: 'job' },
-    { id: 'm2', senderId: 'u2', senderName: 'Mike Torres', senderInitials: 'MT', text: 'See you then.', timestamp: '1:58 PM', date: 'Yesterday', objectId: 'J-004892', objectType: 'job' },
     { id: 'm3', senderId: 'u3', senderName: 'John Doe', senderInitials: 'JD', text: 'Inspection completed for B wing.', timestamp: '2:10 PM', date: 'May 15', objectId: 'J-004892', objectType: 'job' },
+    { id: 'm2', senderId: 'u2', senderName: 'Mike Torres', senderInitials: 'MT', text: 'See you then.', timestamp: '1:58 PM', date: 'Yesterday', objectId: 'J-004892', objectType: 'job' },
+    { id: 'm1', senderId: 'u1', senderName: 'Jane Smith', senderInitials: 'JS', text: 'Walk-through is still on for 2pm if that works.', timestamp: '4:50 PM', date: 'Yesterday', objectId: 'J-004892', objectType: 'job' },
     {
       id: 'msg-failed-1',
       senderId: 'current-user',
