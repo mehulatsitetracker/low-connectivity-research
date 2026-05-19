@@ -8,7 +8,8 @@ export type ScreenId =
   | 'site-detail'
   | 'project-detail'
   | 'chat'
-  | 'notifications';
+  | 'notifications'
+  | 'thread';
 
 export type ObjectType = 'job' | 'site' | 'project';
 
@@ -40,6 +41,11 @@ export interface Project {
   type: string;
 }
 
+export interface ReactionGroup {
+  emoji: string;            // "👍" | "❤️" | "😂" | "🎉" | "👀" | "✅" | "like" (org-disabled fallback)
+  userIds: string[];        // count derived from .length
+}
+
 export interface ChatMessage {
   id: string;
   senderId: string;
@@ -52,6 +58,11 @@ export interface ChatMessage {
   attachment?: { name: string; type: string };
   attachments?: { name: string; type: string }[];
   mentions?: string[];
+  parentId?: string;
+  replyCount?: number;
+  lastReplyAt?: string;
+  reactions?: ReactionGroup[];
+  failed?: boolean;
 }
 
 export interface Notification {
@@ -64,6 +75,7 @@ export interface Notification {
   messagePreview: string;
   timestamp: string;
   isRead: boolean;
+  threadId?: string;  // for deep-linking notifications into thread view
 }
 
 export interface FlowStep {
@@ -73,6 +85,21 @@ export interface FlowStep {
   label: string;
   activeTab?: ActiveTab;
   newMessageText?: string;
+  threadId?: string;
+  replyText?: string;
+  network?: 'online' | 'offline';
+  loading?: { chat?: boolean; list?: boolean; notifications?: boolean };
+  errorState?:
+    | 'send-fail'
+    | 'load-fail'
+    | 'older-fail'
+    | 'attachment-fail'
+    | 'reaction-fail'
+    | 'mention-fail'
+    | 'permission-denied'
+    | 'notif-load-fail';
+  reactionsEnabled?: boolean;
+  unreadCounts?: Record<string, number>;
 }
 
 export interface SubScenario {
@@ -98,4 +125,12 @@ export interface AppState {
   notifications: Notification[];
   newMessageText: string;
   chatNotifications: Record<string, boolean>; // objectId → enabled
+  threadId?: string;
+  replyText: string;
+  network: 'online' | 'offline';
+  loading: { chat?: boolean; list?: boolean; notifications?: boolean };
+  errorState?: FlowStep['errorState'];
+  reactionsEnabled: boolean;
+  unreadCounts: Record<string, number>;
+  toast?: { message: string; tone?: 'error' | 'info' };
 }
