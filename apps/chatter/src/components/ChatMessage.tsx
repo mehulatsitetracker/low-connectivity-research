@@ -36,6 +36,7 @@ function renderTextWithMentions(text: string, mentions?: string[]) {
   return parts.length > 0 ? parts : text;
 }
 
+// reactionsEnabled is wired in Phase 5 — prop accepted here so ChatScreen can pass it now
 export function ChatMessageComponent({ message, onAction }: ChatMessageProps) {
   return (
     <div style={{ display: 'flex', gap: 10, padding: '8px 0', alignItems: 'flex-start' }}>
