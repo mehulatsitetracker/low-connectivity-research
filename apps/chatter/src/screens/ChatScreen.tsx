@@ -2,9 +2,15 @@ import { useState } from 'react';
 import { colors, radii } from '../theme';
 import { ChatMessageComponent } from '../components/ChatMessage';
 import { MessageInput } from '../components/MessageInput';
+import { OfflineChat } from '../components/OfflineChat';
+import { ChatSkeleton } from '../components/ChatSkeleton';
+import { EmptyChat } from '../components/EmptyChat';
+import { FullScreenError } from '../components/FullScreenError';
+import { InlineRetry } from '../components/InlineRetry';
+import { ComposerBanner } from '../components/ComposerBanner';
 import { getObjectName } from '../data/objects';
 import { ChevronLeft, Bell, BellOff, BellRing } from 'lucide-react';
-import type { ChatMessage } from '../types';
+import type { ChatMessage, AppState } from '../types';
 
 interface ChatScreenProps {
   objectId: string;
@@ -14,6 +20,10 @@ interface ChatScreenProps {
   notificationsEnabled: boolean;
   onAction: (action: string) => void;
   onMessageChange: (text: string) => void;
+  network?: 'online' | 'offline';
+  loading?: boolean;
+  errorState?: AppState['errorState'];
+  reactionsEnabled?: boolean;
 }
 
 function NotificationModal({
@@ -103,60 +113,107 @@ function NotificationModal({
   );
 }
 
-export function ChatScreen({ objectId, objectType, messages, newMessageText, notificationsEnabled, onAction, onMessageChange }: ChatScreenProps) {
+export function ChatScreen({
+  objectId, objectType, messages, newMessageText, notificationsEnabled,
+  onAction, onMessageChange,
+  network = 'online', loading, errorState, reactionsEnabled = true,
+}: ChatScreenProps) {
   const title = getObjectName(objectId, objectType);
   const [showModal, setShowModal] = useState(false);
 
-  return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: colors.surface, position: 'relative' }}>
-      {/* TopBar with bell */}
-      <div style={{
-        height: 44, background: colors.topBar,
-        display: 'flex', alignItems: 'center',
-        padding: '0 12px', flexShrink: 0, gap: 8,
+  const containerStyle: React.CSSProperties = {
+    flex: 1, display: 'flex', flexDirection: 'column',
+    background: colors.surface, position: 'relative',
+  };
+
+  const header = (
+    <div style={{
+      height: 44, background: colors.topBar,
+      display: 'flex', alignItems: 'center',
+      padding: '0 12px', flexShrink: 0, gap: 8,
+    }}>
+      <button onClick={() => onAction('back')} style={{
+        background: 'none', border: 'none', color: '#fff', cursor: 'pointer',
+        padding: 4, display: 'flex', alignItems: 'center',
       }}>
-        <button onClick={() => onAction('back')} style={{
+        <ChevronLeft size={24} />
+      </button>
+      <div style={{ flex: 1, fontSize: 17, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {title}
+      </div>
+      <button
+        onClick={() => setShowModal(true)}
+        style={{
           background: 'none', border: 'none', color: '#fff', cursor: 'pointer',
           padding: 4, display: 'flex', alignItems: 'center',
-        }}>
-          <ChevronLeft size={24} />
-        </button>
-        <div style={{ flex: 1, fontSize: 17, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {title}
-        </div>
-        <button
-          onClick={() => setShowModal(true)}
-          style={{
-            background: 'none', border: 'none', color: '#fff', cursor: 'pointer',
-            padding: 4, display: 'flex', alignItems: 'center',
-          }}
-        >
-          {notificationsEnabled
-            ? <BellRing size={22} color="#fff" />
-            : <Bell size={22} color="#fff" />
-          }
-        </button>
-      </div>
+        }}
+      >
+        {notificationsEnabled
+          ? <BellRing size={22} color="#fff" />
+          : <Bell size={22} color="#fff" />
+        }
+      </button>
+    </div>
+  );
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px' }}>
-        {messages.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px', color: colors.textTertiary, fontSize: 14 }}>
-            No messages yet. Start the conversation!
-          </div>
-        ) : (
-          messages.map(msg => (
-            <ChatMessageComponent key={msg.id} message={msg} />
-          ))
-        )}
+  // Precedence: offline > load-fail > permission-denied (normal render, composer replaced) > loading-skeleton > empty > normal
+  if (network === 'offline') {
+    return (
+      <div style={containerStyle}>
+        {header}
+        <OfflineChat onRetry={() => onAction('retry-chat-load')} />
       </div>
+    );
+  }
 
+  if (errorState === 'load-fail') {
+    return (
+      <div style={containerStyle}>
+        {header}
+        <FullScreenError
+          title="Couldn't load Chatter"
+          subtext="Something went wrong loading this conversation."
+          onRetry={() => onAction('retry-chat-load')}
+        />
+      </div>
+    );
+  }
+
+  const isPermissionDenied = errorState === 'permission-denied';
+  const composer = isPermissionDenied
+    ? <ComposerBanner message="You don't have permission to post here" />
+    : (
       <MessageInput
         value={newMessageText}
         onChange={onMessageChange}
         onSend={() => onAction('send-message')}
         onSendWithAttachment={(atts) => onAction(`send-attachments:${JSON.stringify(atts.map(a => ({ name: a.name, type: a.type })))}`)}
       />
+    );
 
+  return (
+    <div style={containerStyle}>
+      {header}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px' }}>
+        {errorState === 'older-fail' && (
+          <InlineRetry message="Couldn't load older messages" onRetry={() => onAction('retry-older')} />
+        )}
+        {loading && messages.length === 0 ? (
+          <ChatSkeleton />
+        ) : messages.length === 0 ? (
+          <EmptyChat onAction={onAction} />
+        ) : (
+          messages.map(msg => (
+            <ChatMessageComponent
+              key={msg.id}
+              message={msg}
+              reactionsEnabled={reactionsEnabled}
+              onAction={onAction}
+            />
+          ))
+        )}
+      </div>
+      {composer}
       {showModal && (
         <NotificationModal
           isEnabled={notificationsEnabled}
