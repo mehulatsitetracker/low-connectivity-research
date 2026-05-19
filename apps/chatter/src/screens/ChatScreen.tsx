@@ -27,6 +27,8 @@ interface ChatScreenProps {
   errorState?: AppState['errorState'];
   reactionsEnabled?: boolean;
   toast?: AppState['toast'];
+  userName?: string;
+  userInitials?: string;
 }
 
 function NotificationModal({
@@ -120,10 +122,12 @@ export function ChatScreen({
   objectId, objectType, messages, newMessageText, notificationsEnabled,
   onAction, onMessageChange,
   network = 'online', loading, errorState, reactionsEnabled = true, toast,
+  userName, userInitials,
 }: ChatScreenProps) {
   const title = getObjectName(objectId, objectType);
   const [showModal, setShowModal] = useState(false);
   const [menuForId, setMenuForId] = useState<string | null>(null);
+  const topLevelMessages = messages.filter(m => !m.parentId);
 
   const containerStyle: React.CSSProperties = {
     flex: 1, display: 'flex', flexDirection: 'column',
@@ -212,18 +216,20 @@ export function ChatScreen({
         {errorState === 'older-fail' && (
           <InlineRetry message="Couldn't load older messages" onRetry={() => onAction('retry-older')} />
         )}
-        {loading && messages.length === 0 ? (
+        {loading && topLevelMessages.length === 0 ? (
           <ChatSkeleton />
-        ) : messages.length === 0 ? (
+        ) : topLevelMessages.length === 0 ? (
           <EmptyChat onAction={onAction} />
         ) : (
-          messages.map(msg => (
+          topLevelMessages.map(msg => (
             <ChatMessageComponent
               key={msg.id}
               message={msg}
               reactionsEnabled={reactionsEnabled}
               onAction={messageOnAction}
               onLongPress={() => setMenuForId(msg.id)}
+              userName={userName}
+              userInitials={userInitials}
             />
           ))
         )}
