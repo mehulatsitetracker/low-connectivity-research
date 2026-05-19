@@ -3,16 +3,23 @@ import { TopBar } from '../components/TopBar';
 import { SearchBar } from '../components/SearchBar';
 import { ObjectCard } from '../components/ObjectCard';
 import { BottomNav } from '../components/BottomNav';
+import { ObjectListSkeleton } from '../components/ObjectListSkeleton';
+import { FullScreenError } from '../components/FullScreenError';
 import { SITES } from '../data/objects';
-import type { ActiveTab } from '../types';
+import type { ActiveTab, AppState } from '../types';
 
 interface AllSitesScreenProps {
   activeTab: ActiveTab;
   onAction: (action: string) => void;
   unreadCounts?: Record<string, number>;
+  loading?: boolean;
+  errorState?: AppState['errorState'];
 }
 
-export function AllSitesScreen({ activeTab, onAction, unreadCounts }: AllSitesScreenProps) {
+export function AllSitesScreen({ activeTab, onAction, unreadCounts, loading, errorState }: AllSitesScreenProps) {
+  if (loading) return <ObjectListSkeleton />;
+  if (errorState === 'load-fail') return <FullScreenError title="Couldn't load list" onRetry={() => onAction('retry-list-load')} />;
+
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: colors.background }}>
       <TopBar title="All Sites" onBack={() => onAction('back')} showDropdown showPlus />

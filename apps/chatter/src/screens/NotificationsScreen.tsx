@@ -2,14 +2,24 @@ import { Search } from 'lucide-react';
 import { colors } from '../theme';
 import { TopBar } from '../components/TopBar';
 import { NotificationItem } from '../components/NotificationItem';
-import type { Notification } from '../types';
+import { OfflineNotifications } from '../components/OfflineNotifications';
+import { FullScreenError } from '../components/FullScreenError';
+import { NotificationListSkeleton } from '../components/NotificationListSkeleton';
+import type { Notification, AppState } from '../types';
 
 interface NotificationsScreenProps {
   notifications: Notification[];
   onAction: (action: string) => void;
+  network?: 'online' | 'offline';
+  loading?: boolean;
+  errorState?: AppState['errorState'];
 }
 
-export function NotificationsScreen({ notifications, onAction }: NotificationsScreenProps) {
+export function NotificationsScreen({ notifications, onAction, network, loading, errorState }: NotificationsScreenProps) {
+  if (network === 'offline') return <OfflineNotifications onRetry={() => onAction('retry-notif-load')} />;
+  if (errorState === 'notif-load-fail') return <FullScreenError title="Couldn't load notifications" onRetry={() => onAction('retry-notif-load')} />;
+  if (loading) return <NotificationListSkeleton />;
+
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: colors.surface }}>
       <TopBar title="Notifications" onBack={() => onAction('back')} />
