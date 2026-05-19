@@ -213,6 +213,54 @@ function App() {
       }));
       return;
     }
+
+    // EmptyChat chips
+    if (action === 'empty-post-update') {
+      setState(prev => ({ ...prev, newMessageText: prev.newMessageText || '' }));
+      return;
+    }
+    if (action === 'empty-mention') {
+      setState(prev => ({ ...prev, newMessageText: prev.newMessageText ? prev.newMessageText + ' @' : '@' }));
+      return;
+    }
+    if (action === 'empty-attach-photo') {
+      // Visual-only for the prototype — no auto-open of attachment sheet
+      return;
+    }
+
+    // Retry handlers
+    if (action === 'retry-chat-load' || action === 'retry-older') {
+      setState(prev => ({
+        ...prev,
+        errorState: undefined,
+        loading: { ...prev.loading, chat: false },
+      }));
+      return;
+    }
+    if (action === 'retry-list-load') {
+      setState(prev => ({ ...prev, errorState: undefined, loading: { ...prev.loading, list: false } }));
+      return;
+    }
+    if (action === 'retry-notif-load') {
+      setState(prev => ({ ...prev, errorState: undefined, loading: { ...prev.loading, notifications: false } }));
+      return;
+    }
+
+    // Per-message retry
+    if (action.startsWith('retry-send:')) {
+      const id = action.replace('retry-send:', '');
+      setState(prev => {
+        const list = prev.messages[prev.currentObjectId] || [];
+        return {
+          ...prev,
+          messages: {
+            ...prev.messages,
+            [prev.currentObjectId]: list.map(m => m.id === id ? { ...m, failed: false } : m),
+          },
+        };
+      });
+      return;
+    }
   }, [goBack, navigateTo]);
 
   // Snapshot loader for configurator — takes scenario + step indices
@@ -254,11 +302,11 @@ function App() {
       case 'menu':
         return <MenuScreen hasUnread={hasUnread} activeTab={state.activeTab} onAction={handleAction} />;
       case 'all-jobs':
-        return <AllJobsScreen activeTab={state.activeTab} onAction={handleAction} unreadCounts={state.unreadCounts} />;
+        return <AllJobsScreen activeTab={state.activeTab} onAction={handleAction} unreadCounts={state.unreadCounts} loading={state.loading.list} errorState={state.errorState} />;
       case 'all-sites':
-        return <AllSitesScreen activeTab={state.activeTab} onAction={handleAction} unreadCounts={state.unreadCounts} />;
+        return <AllSitesScreen activeTab={state.activeTab} onAction={handleAction} unreadCounts={state.unreadCounts} loading={state.loading.list} errorState={state.errorState} />;
       case 'all-projects':
-        return <AllProjectsScreen activeTab={state.activeTab} onAction={handleAction} unreadCounts={state.unreadCounts} />;
+        return <AllProjectsScreen activeTab={state.activeTab} onAction={handleAction} unreadCounts={state.unreadCounts} loading={state.loading.list} errorState={state.errorState} />;
       case 'job-detail':
         return <JobDetailScreen jobId={state.currentObjectId} messages={currentMessages} activeTab={state.activeTab} onAction={handleAction} unreadCount={state.unreadCounts[state.currentObjectId] ?? 0} />;
       case 'site-detail':
@@ -275,10 +323,22 @@ function App() {
             notificationsEnabled={!!state.chatNotifications[state.currentObjectId]}
             onAction={handleAction}
             onMessageChange={(text) => setState(prev => ({ ...prev, newMessageText: text }))}
+            network={state.network}
+            loading={state.loading.chat}
+            errorState={state.errorState}
+            reactionsEnabled={state.reactionsEnabled}
           />
         );
       case 'notifications':
-        return <NotificationsScreen notifications={state.notifications} onAction={handleAction} />;
+        return (
+          <NotificationsScreen
+            notifications={state.notifications}
+            onAction={handleAction}
+            network={state.network}
+            loading={state.loading.notifications}
+            errorState={state.errorState}
+          />
+        );
       default:
         return <HomeScreen hasUnread={hasUnread} activeTab={state.activeTab} onAction={handleAction} />;
     }
