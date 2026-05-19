@@ -17,6 +17,8 @@ import { INITIAL_NOTIFICATIONS } from './data/notifications';
 import { SCENARIOS } from './data/scenarios';
 import type { AppState, ScreenId, ObjectType } from './types';
 
+const CURRENT_USER_ID = 'current-user';
+
 const INITIAL_STATE: AppState = {
   screen: 'home',
   currentObjectId: '',
@@ -261,6 +263,80 @@ function App() {
       });
       return;
     }
+
+    // Toggle reaction
+    if (action.startsWith('toggle-reaction:')) {
+      const [, id, emoji] = action.split(':');
+      setState(prev => {
+        const list = prev.messages[prev.currentObjectId] || [];
+        return {
+          ...prev,
+          messages: {
+            ...prev.messages,
+            [prev.currentObjectId]: list.map(m => {
+              if (m.id !== id) return m;
+              const groups = (m.reactions || []).slice();
+              const idx = groups.findIndex(g => g.emoji === emoji);
+              if (idx === -1) {
+                groups.push({ emoji, userIds: [CURRENT_USER_ID] });
+              } else {
+                const g = groups[idx];
+                const has = g.userIds.includes(CURRENT_USER_ID);
+                const newIds = has ? g.userIds.filter(u => u !== CURRENT_USER_ID) : [...g.userIds, CURRENT_USER_ID];
+                if (newIds.length === 0) groups.splice(idx, 1);
+                else groups[idx] = { ...g, userIds: newIds };
+              }
+              return { ...m, reactions: groups };
+            }),
+          },
+        };
+      });
+      return;
+    }
+
+    // Simulate reaction fail
+    if (action.startsWith('simulate-reaction-fail:')) {
+      setState(prev => ({ ...prev, toast: { message: "Couldn't save reaction", tone: 'error' } }));
+      return;
+    }
+
+    // Copy message
+    if (action.startsWith('copy-message:')) {
+      setState(prev => ({ ...prev, toast: { message: 'Copied to clipboard' } }));
+      return;
+    }
+
+    // Delete message
+    if (action.startsWith('delete-message:')) {
+      const id = action.replace('delete-message:', '');
+      setState(prev => {
+        const list = prev.messages[prev.currentObjectId] || [];
+        return {
+          ...prev,
+          messages: { ...prev.messages, [prev.currentObjectId]: list.filter(m => m.id !== id) },
+        };
+      });
+      return;
+    }
+
+    // Reply in thread (Phase 6 will render the screen; handler added now)
+    if (action.startsWith('reply-thread:')) {
+      const id = action.replace('reply-thread:', '');
+      setState(prev => ({
+        ...prev,
+        screen: 'thread',
+        threadId: id,
+        replyText: '',
+        screenHistory: [...prev.screenHistory, { screen: prev.screen, objectId: prev.currentObjectId, objectType: prev.currentObjectType }],
+      }));
+      return;
+    }
+
+    // Dismiss toast
+    if (action === 'dismiss-toast') {
+      setState(prev => ({ ...prev, toast: undefined }));
+      return;
+    }
   }, [goBack, navigateTo]);
 
   // Snapshot loader for configurator — takes scenario + step indices
@@ -327,6 +403,7 @@ function App() {
             loading={state.loading.chat}
             errorState={state.errorState}
             reactionsEnabled={state.reactionsEnabled}
+            toast={state.toast}
           />
         );
       case 'notifications':

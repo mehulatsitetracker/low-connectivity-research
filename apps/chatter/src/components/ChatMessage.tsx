@@ -1,12 +1,15 @@
+import { useRef } from 'react';
 import { colors } from '../theme';
 import { Avatar } from './Avatar';
 import { Paperclip, AlertCircle } from 'lucide-react';
 import type { ChatMessage as ChatMessageType } from '../types';
+import { ReactionPills } from './ReactionPills';
 
 interface ChatMessageProps {
   message: ChatMessageType;
-  reactionsEnabled?: boolean;   // used in Phase 5
+  reactionsEnabled?: boolean;
   onAction?: (action: string) => void;
+  onLongPress?: () => void;
 }
 
 function renderTextWithMentions(text: string, mentions?: string[]) {
@@ -36,10 +39,26 @@ function renderTextWithMentions(text: string, mentions?: string[]) {
   return parts.length > 0 ? parts : text;
 }
 
-// reactionsEnabled is wired in Phase 5 — prop accepted here so ChatScreen can pass it now
-export function ChatMessageComponent({ message, onAction }: ChatMessageProps) {
+export function ChatMessageComponent({ message, onAction, onLongPress }: ChatMessageProps) {
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const startPress = () => {
+    if (!onLongPress) return;
+    pressTimer.current = setTimeout(() => { onLongPress(); }, 500);
+  };
+  const cancelPress = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  };
+
   return (
-    <div style={{ display: 'flex', gap: 10, padding: '8px 0', alignItems: 'flex-start' }}>
+    <div
+      style={{ display: 'flex', gap: 10, padding: '8px 0', alignItems: 'flex-start' }}
+      onMouseDown={startPress} onMouseUp={cancelPress} onMouseLeave={cancelPress}
+      onTouchStart={startPress} onTouchEnd={cancelPress} onTouchCancel={cancelPress}
+    >
       <Avatar initials={message.senderInitials} size={40} />
       <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'flex-start' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -61,6 +80,12 @@ export function ChatMessageComponent({ message, onAction }: ChatMessageProps) {
               {att.name}
             </div>
           ))}
+          {message.reactions && message.reactions.length > 0 && onAction && (
+            <ReactionPills
+              reactions={message.reactions}
+              onToggle={(emoji) => onAction(`toggle-reaction:${message.id}:${emoji}`)}
+            />
+          )}
         </div>
         {message.failed && onAction && (
           <button

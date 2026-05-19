@@ -24,6 +24,7 @@ interface ChatScreenProps {
   loading?: boolean;
   errorState?: AppState['errorState'];
   reactionsEnabled?: boolean;
+  toast?: AppState['toast'];
 }
 
 function NotificationModal({
