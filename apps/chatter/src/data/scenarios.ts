@@ -129,6 +129,21 @@ export const SCENARIOS: ScenarioDef[] = [
     }],
   },
   {
+    id: 'message-icon-badges',
+    name: 'Message icon & list badges',
+    description: 'Unread badges across the IA: list dots, header count',
+    subScenarios: [{
+      id: 'default',
+      name: 'Default',
+      steps: [
+        { screen: 'home', currentObjectId: '', currentObjectType: 'job', label: 'Home (no widget)', activeTab: 'home' },
+        { screen: 'all-jobs', currentObjectId: '', currentObjectType: 'job', label: 'Jobs list — some rows have dots', unreadCounts: { 'J-004892': 5, 'J-004901': 2 } },
+        { screen: 'job-detail', currentObjectId: 'J-004892', currentObjectType: 'job', label: 'Job detail — header badge shows 5', unreadCounts: { 'J-004892': 5 } },
+        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: 'Open chat — badge resets', unreadCounts: {} },
+      ],
+    }],
+  },
+  {
     id: 'loading-skeletons',
     name: 'Loading skeletons',
     description: 'Shape-matched loaders for chat, lists, notifications',
