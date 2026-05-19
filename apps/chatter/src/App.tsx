@@ -20,6 +20,14 @@ import type { AppState, ScreenId, ObjectType, ChatMessage } from './types';
 
 const CURRENT_USER_ID = 'current-user';
 
+function computeInitials(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return 'YO';
+  const parts = trimmed.split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
 const INITIAL_STATE: AppState = {
   screen: 'home',
   currentObjectId: '',
@@ -36,6 +44,8 @@ const INITIAL_STATE: AppState = {
   loading: {},
   reactionsEnabled: true,
   unreadCounts: {},
+  userName: 'You',
+  userInitials: 'YO',
 };
 
 function buildHistoryForStep(screen: ScreenId, objectType: ObjectType): { screen: ScreenId; objectId: string; objectType: ObjectType }[] {
@@ -127,6 +137,14 @@ function App() {
     // Chat
     if (action === 'open-chat') { navigateTo('chat'); return; }
 
+    // Set user name
+    if (action.startsWith('set-user-name:')) {
+      const name = action.replace('set-user-name:', '');
+      const safe = name.trim() || 'You';
+      setState(prev => ({ ...prev, userName: safe, userInitials: computeInitials(safe) }));
+      return;
+    }
+
     // Send message
     if (action === 'send-message') {
       setState(prev => {
@@ -135,8 +153,8 @@ function App() {
         const newMsg = {
           id: `msg-${Date.now()}`,
           senderId: 'current-user',
-          senderName: 'You',
-          senderInitials: 'YO',
+          senderName: prev.userName,
+          senderInitials: prev.userInitials,
           text,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           objectId: prev.currentObjectId,
@@ -167,8 +185,8 @@ function App() {
         const newMsg = {
           id: `msg-${Date.now()}`,
           senderId: 'current-user',
-          senderName: 'You',
-          senderInitials: 'YO',
+          senderName: prev.userName,
+          senderInitials: prev.userInitials,
           text: caption || defaultText,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           objectId: prev.currentObjectId,
@@ -354,8 +372,8 @@ function App() {
         const newMsg: ChatMessage = {
           id: `msg-${Date.now()}`,
           senderId: 'current-user',
-          senderName: 'You',
-          senderInitials: 'YO',
+          senderName: prev.userName,
+          senderInitials: prev.userInitials,
           text,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           objectId: prev.currentObjectId,
@@ -391,7 +409,7 @@ function App() {
     const step = scenario.subScenarios[0].steps[stepIdx];
     if (!step) return;
 
-    setState({
+    setState(prev => ({
       ...INITIAL_STATE,
       screen: step.screen,
       currentObjectId: step.currentObjectId,
@@ -407,11 +425,16 @@ function App() {
       errorState: step.errorState,
       reactionsEnabled: step.reactionsEnabled ?? true,
       unreadCounts: step.unreadCounts || {},
-    });
+      // Preserve user name across snapshot loads
+      userName: prev.userName,
+      userInitials: prev.userInitials,
+    }));
   }, []);
 
   const { configuratorConfig } = useConfiguratorConfig({
     onLoadSnapshot: loadSnapshot,
+    userName: state.userName,
+    onUserNameChange: (name) => handleAction(`set-user-name:${name}`),
   });
 
   const currentMessages = state.messages[state.currentObjectId] || [];
@@ -449,6 +472,8 @@ function App() {
             errorState={state.errorState}
             reactionsEnabled={state.reactionsEnabled}
             toast={state.toast}
+            userName={state.userName}
+            userInitials={state.userInitials}
           />
         );
       case 'notifications':
@@ -470,6 +495,8 @@ function App() {
             reactionsEnabled={state.reactionsEnabled}
             onAction={handleAction}
             onReplyChange={(text) => setState(prev => ({ ...prev, replyText: text }))}
+            userName={state.userName}
+            userInitials={state.userInitials}
           />
         ) : null;
       default:

@@ -10,6 +10,8 @@ interface ChatMessageProps {
   reactionsEnabled?: boolean;
   onAction?: (action: string) => void;
   onLongPress?: () => void;
+  userName?: string;
+  userInitials?: string;
 }
 
 function renderTextWithMentions(text: string, mentions?: string[]) {
@@ -39,8 +41,11 @@ function renderTextWithMentions(text: string, mentions?: string[]) {
   return parts.length > 0 ? parts : text;
 }
 
-export function ChatMessageComponent({ message, onAction, onLongPress }: ChatMessageProps) {
+export function ChatMessageComponent({ message, onAction, onLongPress, userName, userInitials }: ChatMessageProps) {
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMe = message.senderId === 'current-user';
+  const displayName = isMe && userName ? userName : message.senderName;
+  const displayInitials = isMe && userInitials ? userInitials : message.senderInitials;
 
   const startPress = () => {
     if (!onLongPress) return;
@@ -59,11 +64,11 @@ export function ChatMessageComponent({ message, onAction, onLongPress }: ChatMes
       onMouseDown={startPress} onMouseUp={cancelPress} onMouseLeave={cancelPress}
       onTouchStart={startPress} onTouchEnd={cancelPress} onTouchCancel={cancelPress}
     >
-      <Avatar initials={message.senderInitials} size={40} />
+      <Avatar initials={displayInitials} size={40} />
       <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'flex-start' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 2 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>{message.senderName}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>{displayName}</span>
             <span style={{ fontSize: 12, color: colors.textTertiary }}>{message.timestamp}</span>
           </div>
           <div style={{ fontSize: 14, color: message.failed ? colors.textTertiary : colors.textSecondary, lineHeight: 1.5 }}>

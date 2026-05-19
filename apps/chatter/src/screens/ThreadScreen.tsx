@@ -11,10 +11,13 @@ interface ThreadScreenProps {
   reactionsEnabled: boolean;
   onAction: (action: string) => void;
   onReplyChange: (text: string) => void;
+  userName?: string;
+  userInitials?: string;
 }
 
 export function ThreadScreen({
   threadId, messages, replyText, reactionsEnabled, onAction, onReplyChange,
+  userName, userInitials,
 }: ThreadScreenProps) {
   const parent = messages.find(m => m.id === threadId);
   const replies = messages.filter(m => m.parentId === threadId);
@@ -35,11 +38,11 @@ export function ThreadScreen({
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px' }}>
         <div style={{ background: colors.surfaceAlt, borderRadius: 8, padding: '8px 12px', marginBottom: 8 }}>
-          <ChatMessageComponent message={parent} reactionsEnabled={reactionsEnabled} onAction={onAction} />
+          <ChatMessageComponent message={parent} reactionsEnabled={reactionsEnabled} onAction={onAction} userName={userName} userInitials={userInitials} />
         </div>
         <div style={{ height: 1, background: colors.borderLight, margin: '8px 0 12px' }} />
         {replies.map(r => (
-          <ChatMessageComponent key={r.id} message={r} reactionsEnabled={reactionsEnabled} onAction={onAction} />
+          <ChatMessageComponent key={r.id} message={r} reactionsEnabled={reactionsEnabled} onAction={onAction} userName={userName} userInitials={userInitials} />
         ))}
       </div>
       <MessageInput

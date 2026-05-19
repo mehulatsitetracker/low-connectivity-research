@@ -1,6 +1,7 @@
 import React from 'react';
 import { SCENARIOS } from '../data/scenarios';
 import type { ConfiguratorConfig, Category, FlowNode, FlowEdge } from 'configurator-ui';
+import { UserNameInput } from '../components/UserNameInput';
 
 // Build a global step ID: "s{scenarioIdx}-{stepIdx}"
 function makeStepId(scenIdx: number, stepIdx: number) {
@@ -22,8 +23,12 @@ const SCENARIO_ICONS: Record<string, 'checkmark' | 'branch' | 'warning' | 'grid'
 
 export function useConfiguratorConfig({
   onLoadSnapshot,
+  userName,
+  onUserNameChange,
 }: {
   onLoadSnapshot: (scenIdx: number, stepIdx: number) => void;
+  userName: string;
+  onUserNameChange: (name: string) => void;
 }): { configuratorConfig: ConfiguratorConfig } {
   const [activeStepId, setActiveStepId] = React.useState(makeStepId(0, 0));
 
@@ -74,6 +79,7 @@ export function useConfiguratorConfig({
       title: currentScenario.name,
       description: currentScenario.description,
     },
+    customControls: <UserNameInput value={userName} onChange={onUserNameChange} />,
     categories,
     reference: {
       label: 'All flows',

@@ -133,4 +133,6 @@ export interface AppState {
   reactionsEnabled: boolean;
   unreadCounts: Record<string, number>;
   toast?: { message: string; tone?: 'error' | 'info' };
+  userName: string;
+  userInitials: string;
 }
