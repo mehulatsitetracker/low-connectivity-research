@@ -31,6 +31,7 @@ interface MessageInputProps {
   onChange: (text: string) => void;
   onSend: () => void;
   onSendWithAttachment?: (attachments: PendingAttachment[]) => void;
+  mentionSearchError?: boolean;
 }
 
 function getMentionQuery(text: string): string | null {
@@ -154,7 +155,7 @@ function UploadSheet({ onClose, onConfirm, selectedIds, onTogglePhoto, onSelectT
   );
 }
 
-export function MessageInput({ value, onChange, onSend, onSendWithAttachment }: MessageInputProps) {
+export function MessageInput({ value, onChange, onSend, onSendWithAttachment, mentionSearchError }: MessageInputProps) {
   const [showMentions, setShowMentions] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
@@ -262,22 +263,28 @@ export function MessageInput({ value, onChange, onSend, onSendWithAttachment }: 
           background: colors.surface, borderTop: `1px solid ${colors.border}`,
           boxShadow: '0 -4px 12px rgba(0,0,0,0.1)', maxHeight: 200, overflowY: 'auto', zIndex: 10,
         }}>
-          {filteredUsers.map(user => (
-            <div
-              key={user.name}
-              onClick={() => handleSelectMention(user.name)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '10px 16px', cursor: 'pointer',
-                borderBottom: `1px solid ${colors.borderLight}`,
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = colors.surfaceAlt)}
-              onMouseLeave={e => (e.currentTarget.style.background = colors.surface)}
-            >
-              <Avatar initials={user.initials} size={32} />
-              <span style={{ fontSize: 14, fontWeight: 500, color: colors.textPrimary }}>{user.name}</span>
+          {mentionSearchError ? (
+            <div style={{ padding: '10px 16px', color: colors.textSecondary, fontSize: 13 }}>
+              Search unavailable — type the name
             </div>
-          ))}
+          ) : (
+            filteredUsers.map(user => (
+              <div
+                key={user.name}
+                onClick={() => handleSelectMention(user.name)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 16px', cursor: 'pointer',
+                  borderBottom: `1px solid ${colors.borderLight}`,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = colors.surfaceAlt)}
+                onMouseLeave={e => (e.currentTarget.style.background = colors.surface)}
+              >
+                <Avatar initials={user.initials} size={32} />
+                <span style={{ fontSize: 14, fontWeight: 500, color: colors.textPrimary }}>{user.name}</span>
+              </div>
+            ))
+          )}
         </div>
       )}
 
