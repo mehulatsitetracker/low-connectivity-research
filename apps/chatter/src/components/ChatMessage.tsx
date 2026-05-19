@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { colors } from '../theme';
 import { Avatar } from './Avatar';
-import { Paperclip, AlertCircle } from 'lucide-react';
+import { Paperclip, AlertCircle, MessageCircle } from 'lucide-react';
 import type { ChatMessage as ChatMessageType } from '../types';
 import { ReactionPills } from './ReactionPills';
 
@@ -85,6 +85,21 @@ export function ChatMessageComponent({ message, onAction, onLongPress }: ChatMes
               reactions={message.reactions}
               onToggle={(emoji) => onAction(`toggle-reaction:${message.id}:${emoji}`)}
             />
+          )}
+          {(message.replyCount ?? 0) > 0 && onAction && (
+            <button
+              onClick={() => onAction(`open-thread:${message.id}`)}
+              style={{
+                marginTop: 6, padding: '6px 10px', borderRadius: 6,
+                background: 'transparent', border: `1px solid ${colors.borderLight}`,
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                fontSize: 13, color: colors.brandTeal, cursor: 'pointer', fontWeight: 600,
+              }}
+            >
+              <MessageCircle size={14} />
+              {message.replyCount} {message.replyCount === 1 ? 'reply' : 'replies'}
+              {message.lastReplyAt && <span style={{ color: colors.textTertiary, fontWeight: 400 }}> · Last reply {message.lastReplyAt}</span>}
+            </button>
           )}
         </div>
         {message.failed && onAction && (

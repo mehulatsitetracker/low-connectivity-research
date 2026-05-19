@@ -332,6 +332,19 @@ function App() {
       return;
     }
 
+    // Open thread by tapping the reply-count affordance under a message bubble
+    if (action.startsWith('open-thread:')) {
+      const id = action.replace('open-thread:', '');
+      setState(prev => ({
+        ...prev,
+        screen: 'thread',
+        threadId: id,
+        replyText: '',
+        screenHistory: [...prev.screenHistory, { screen: prev.screen, objectId: prev.currentObjectId, objectType: prev.currentObjectType }],
+      }));
+      return;
+    }
+
     // Dismiss toast
     if (action === 'dismiss-toast') {
       setState(prev => ({ ...prev, toast: undefined }));
