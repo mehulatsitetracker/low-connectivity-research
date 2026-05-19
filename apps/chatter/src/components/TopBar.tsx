@@ -12,6 +12,7 @@ interface TopBarProps {
   showMore?: boolean;
   showPlus?: boolean;
   showDropdown?: boolean;
+  messageIcon?: React.ReactNode;
 }
 
 export function TopBar({
@@ -25,6 +26,7 @@ export function TopBar({
   showMore,
   showPlus,
   showDropdown,
+  messageIcon,
 }: TopBarProps) {
   return (
     <div style={{
@@ -54,6 +56,7 @@ export function TopBar({
       </div>
 
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+        {messageIcon}
         {showStar && <Star size={22} color="#fff" style={{ opacity: 0.8 }} />}
         {showPlus && <Plus size={22} color="#fff" style={{ opacity: 0.8 }} />}
         {showMore && <MoreVertical size={22} color="#fff" style={{ opacity: 0.8 }} />}
