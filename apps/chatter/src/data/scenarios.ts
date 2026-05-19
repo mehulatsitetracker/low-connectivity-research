@@ -128,4 +128,45 @@ export const SCENARIOS: ScenarioDef[] = [
       ],
     }],
   },
+  {
+    id: 'loading-skeletons',
+    name: 'Loading skeletons',
+    description: 'Shape-matched loaders for chat, lists, notifications',
+    subScenarios: [
+      {
+        id: 'chat',
+        name: 'Chat skeleton',
+        steps: [{ screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: 'Loading chat', loading: { chat: true } }],
+      },
+      {
+        id: 'list',
+        name: 'List skeleton',
+        steps: [{ screen: 'all-jobs', currentObjectId: '', currentObjectType: 'job', label: 'Loading jobs list', loading: { list: true } }],
+      },
+      {
+        id: 'notifications',
+        name: 'Notifications skeleton',
+        steps: [{ screen: 'notifications', currentObjectId: '', currentObjectType: 'job', label: 'Loading notifications', loading: { notifications: true } }],
+      },
+    ],
+  },
+  {
+    id: 'error-states',
+    name: 'Error states',
+    description: 'All eight error scenarios',
+    subScenarios: [{
+      id: 'all',
+      name: 'All errors',
+      steps: [
+        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: '1. Send fail (inline retry on seeded failed message)' },
+        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: '2. Initial chat load fail', errorState: 'load-fail' },
+        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: '3. Load older messages fail', errorState: 'older-fail' },
+        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: '4. Attachment upload fail', errorState: 'attachment-fail' },
+        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: '5. Reaction fail (tap any reaction to trigger toast)', errorState: 'reaction-fail' },
+        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: '6. @mention search fail', errorState: 'mention-fail' },
+        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: '7. Permission denied (composer replaced)', errorState: 'permission-denied' },
+        { screen: 'notifications', currentObjectId: '', currentObjectType: 'job', label: '8. Notification list load fail', errorState: 'notif-load-fail' },
+      ],
+    }],
+  },
 ];
