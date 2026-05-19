@@ -53,6 +53,7 @@ export interface ChatMessage {
   senderInitials: string;
   text: string;
   timestamp: string;
+  date?: string;
   objectId: string;
   objectType: ObjectType;
   attachment?: { name: string; type: string };

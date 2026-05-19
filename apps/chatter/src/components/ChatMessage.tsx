@@ -69,7 +69,9 @@ export function ChatMessageComponent({ message, onAction, onLongPress, userName,
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 2 }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>{displayName}</span>
-            <span style={{ fontSize: 12, color: colors.textTertiary }}>{message.timestamp}</span>
+            <span style={{ fontSize: 12, color: colors.textTertiary }}>
+              {message.date ? `${message.date}, ${message.timestamp}` : message.timestamp}
+            </span>
           </div>
           <div style={{ fontSize: 14, color: message.failed ? colors.textTertiary : colors.textSecondary, lineHeight: 1.5 }}>
             {renderTextWithMentions(message.text, message.mentions)}
