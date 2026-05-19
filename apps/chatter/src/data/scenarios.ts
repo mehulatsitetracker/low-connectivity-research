@@ -87,6 +87,32 @@ export const SCENARIOS: ScenarioDef[] = [
     ],
   },
   {
+    id: 'empty-chat',
+    name: 'Empty chat',
+    description: 'Record with no messages — empty state with quick chips',
+    subScenarios: [{
+      id: 'default',
+      name: 'Default',
+      steps: [
+        { screen: 'chat', currentObjectId: 'P-000099', currentObjectType: 'project', label: 'Empty chat with chips' },
+      ],
+    }],
+  },
+  {
+    id: 'offline-chat',
+    name: 'Offline state',
+    description: 'Strict-block offline screen with retry',
+    subScenarios: [{
+      id: 'default',
+      name: 'Default',
+      steps: [
+        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: 'Chat (online)' },
+        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: 'Offline screen', network: 'offline' },
+        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: 'Back online — chat loads', network: 'online' },
+      ],
+    }],
+  },
+  {
     id: 'notification-flow',
     name: 'Notification Flow',
     description: 'Home → bell → notifications → tap notification → chat → back to notifications',
