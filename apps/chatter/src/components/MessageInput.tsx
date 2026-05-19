@@ -32,6 +32,7 @@ interface MessageInputProps {
   onSend: () => void;
   onSendWithAttachment?: (attachments: PendingAttachment[]) => void;
   mentionSearchError?: boolean;
+  placeholder?: string;
 }
 
 function getMentionQuery(text: string): string | null {
@@ -155,7 +156,7 @@ function UploadSheet({ onClose, onConfirm, selectedIds, onTogglePhoto, onSelectT
   );
 }
 
-export function MessageInput({ value, onChange, onSend, onSendWithAttachment, mentionSearchError }: MessageInputProps) {
+export function MessageInput({ value, onChange, onSend, onSendWithAttachment, mentionSearchError, placeholder }: MessageInputProps) {
   const [showMentions, setShowMentions] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
@@ -354,7 +355,7 @@ export function MessageInput({ value, onChange, onSend, onSendWithAttachment, me
             if (e.key === 'Enter' && hasContent && !showMentions) handleSend();
             if (e.key === 'Escape') { setShowMentions(false); setShowUpload(false); }
           }}
-          placeholder={pendingAttachments.length > 0 ? 'Add a caption...' : 'Type a message...'}
+          placeholder={pendingAttachments.length > 0 ? 'Add a caption...' : (placeholder ?? 'Type a message...')}
           style={{
             flex: 1, padding: '10px 14px', borderRadius: radii.pill,
             border: `1px solid ${colors.border}`, fontSize: 15, fontFamily: 'inherit',

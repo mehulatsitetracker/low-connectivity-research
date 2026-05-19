@@ -12,10 +12,11 @@ import { SiteDetailScreen } from './screens/SiteDetailScreen';
 import { ProjectDetailScreen } from './screens/ProjectDetailScreen';
 import { ChatScreen } from './screens/ChatScreen';
 import { NotificationsScreen } from './screens/NotificationsScreen';
+import { ThreadScreen } from './screens/ThreadScreen';
 import { INITIAL_MESSAGES } from './data/messages';
 import { INITIAL_NOTIFICATIONS } from './data/notifications';
 import { SCENARIOS } from './data/scenarios';
-import type { AppState, ScreenId, ObjectType } from './types';
+import type { AppState, ScreenId, ObjectType, ChatMessage } from './types';
 
 const CURRENT_USER_ID = 'current-user';
 
@@ -345,6 +346,37 @@ function App() {
       return;
     }
 
+    // Send a reply inside a thread
+    if (action === 'send-reply') {
+      setState(prev => {
+        const text = prev.replyText.trim();
+        if (!text || !prev.threadId) return prev;
+        const newMsg: ChatMessage = {
+          id: `msg-${Date.now()}`,
+          senderId: 'current-user',
+          senderName: 'You',
+          senderInitials: 'YO',
+          text,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          objectId: prev.currentObjectId,
+          objectType: prev.currentObjectType,
+          parentId: prev.threadId,
+        };
+        const list = prev.messages[prev.currentObjectId] || [];
+        const updated = list.map(m =>
+          m.id === prev.threadId
+            ? { ...m, replyCount: (m.replyCount || 0) + 1, lastReplyAt: 'now' }
+            : m
+        );
+        return {
+          ...prev,
+          messages: { ...prev.messages, [prev.currentObjectId]: [...updated, newMsg] },
+          replyText: '',
+        };
+      });
+      return;
+    }
+
     // Dismiss toast
     if (action === 'dismiss-toast') {
       setState(prev => ({ ...prev, toast: undefined }));
@@ -429,6 +461,17 @@ function App() {
             errorState={state.errorState}
           />
         );
+      case 'thread':
+        return state.threadId ? (
+          <ThreadScreen
+            threadId={state.threadId}
+            messages={state.messages[state.currentObjectId] || []}
+            replyText={state.replyText}
+            reactionsEnabled={state.reactionsEnabled}
+            onAction={handleAction}
+            onReplyChange={(text) => setState(prev => ({ ...prev, replyText: text }))}
+          />
+        ) : null;
       default:
         return <HomeScreen hasUnread={hasUnread} activeTab={state.activeTab} onAction={handleAction} />;
     }
