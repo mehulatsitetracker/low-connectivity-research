@@ -19,6 +19,7 @@ export const PROJECTS: Project[] = [
   { id: 'P-000011', templateName: 'New Build', siteName: 'Bristol Court 8350', status: 'Pending NTP', type: 'New Build' },
   { id: 'P-000007', templateName: 'New Build', siteName: '100 Park Lane Rd (Rte 202)', status: 'Pending NTP', type: 'New Build' },
   { id: 'P-000092', templateName: 'New Build', siteName: '300 Broad Hollow Rd (Corp HQ)', status: 'Complete', type: 'New Build' },
+  { id: 'P-000099', templateName: 'New Build', siteName: 'Greenfield — No Messages Yet', status: 'Initiation', type: 'New Build' },
 ];
 
 export function getObjectName(objectId: string, objectType: string): string {
