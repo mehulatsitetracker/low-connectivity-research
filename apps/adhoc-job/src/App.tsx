@@ -262,6 +262,8 @@ function App() {
         if (newStatus === 'Completed') {
           if (timer.state === 'running') newAccumulated = timer.accumulated + elapsed;
           newTimerState = 'captured';
+        } else if (timer.state === 'captured') {
+          newTimerState = 'paused';
         }
         return {
           ...prev,
