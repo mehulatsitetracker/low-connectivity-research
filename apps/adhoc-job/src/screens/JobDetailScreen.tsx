@@ -1,8 +1,10 @@
 import type React from 'react';
+import { useState } from 'react';
 import { colors, radii } from '../theme';
 import { JOBS, JOB_FORMS } from '../data/jobs';
 import { TopBar } from '../components/TopBar';
 import { StatusPicker, STATUS_DOT_COLORS } from '../components/StatusPicker';
+import { DirectionsDialog } from '../components/DirectionsDialog';
 import type { JobStatus, TimerState, ConfigOptions } from '../types';
 
 interface Props {
@@ -35,6 +37,7 @@ export const JobDetailScreen: React.FC<Props> = ({
   const isCaptured = timerState === 'captured';
   const isRunning = timerState === 'running';
   const isPaused = timerState === 'paused';
+  const [showDirections, setShowDirections] = useState(false);
 
   // Gating: must be checked in to change status or start timer (when site check-in is enabled)
   const isGated = config.siteCheckInEnabled && !isCheckedIn;
@@ -63,11 +66,13 @@ export const JobDetailScreen: React.FC<Props> = ({
             <div style={{ fontWeight: 700, fontSize: 14, color: colors.textPrimary }}>{job.siteName}</div>
             <div style={{ fontSize: 13, color: colors.textSecondary }}>{job.address}</div>
             <div style={{ fontSize: 13, color: colors.textSecondary }}>{job.city}</div>
-            <button style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px',
-              border: `1px solid ${colors.border}`, borderRadius: radii.button, background: colors.surface,
-              fontSize: 13, color: colors.textPrimary, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4,
-            }}>
+            <button
+              onClick={() => setShowDirections(true)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px',
+                border: `1px solid ${colors.border}`, borderRadius: radii.button, background: colors.surface,
+                fontSize: 13, color: colors.textPrimary, cursor: 'pointer', fontFamily: 'inherit', marginTop: 4,
+              }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={colors.textPrimary} strokeWidth="2">
                 <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
               </svg>
@@ -253,6 +258,15 @@ export const JobDetailScreen: React.FC<Props> = ({
           currentStatus={jobStatus}
           onSelect={(s: JobStatus) => onAction(`set-status:${s}`)}
           onClose={() => onAction('close-status-picker')}
+        />
+      )}
+
+      {/* Directions dialog overlay */}
+      {showDirections && (
+        <DirectionsDialog
+          onConfirm={() => { onAction('confirm-going-to-site'); setShowDirections(false); }}
+          onPreviewOnly={() => setShowDirections(false)}
+          onClose={() => setShowDirections(false)}
         />
       )}
     </div>

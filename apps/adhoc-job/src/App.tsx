@@ -289,6 +289,18 @@ function App() {
     if (action === 'next-day') { setState(prev => ({ ...prev, currentDay: prev.currentDay + 1, isCheckedIn: false, hasCheckedOutToday: false, lastCheckIn: '' })); return; }
     if (action === 'prev-day') { setState(prev => ({ ...prev, currentDay: Math.max(1, prev.currentDay - 1), isCheckedIn: false, hasCheckedOutToday: false, lastCheckIn: '' })); return; }
 
+    if (action === 'confirm-going-to-site') {
+      setState(prev => {
+        const currentUserName = CREW_MEMBERS.find(m => m.isCurrentUser)?.name;
+        if (!currentUserName) return prev;
+        return {
+          ...prev,
+          crewStatuses: { ...prev.crewStatuses, [currentUserName]: 'En Route' as CrewMemberStatus },
+        };
+      });
+      return;
+    }
+
     if (action === 'open-crew-list') { navigateTo('crew-list'); return; }
     if (action === 'crew-update') { goBack(); return; }
     if (action.startsWith('crew-set-status:')) {
