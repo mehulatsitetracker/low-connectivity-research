@@ -6,6 +6,7 @@ interface MessageContextMenuProps {
   messageId: string;
   isOwn: boolean;
   reactionsEnabled: boolean;
+  inThread?: boolean;
   onClose: () => void;
   onAction: (action: string) => void;
 }
@@ -20,7 +21,7 @@ const Item = ({ icon, label, onClick, danger }: { icon: React.ReactNode; label: 
 );
 
 export function MessageContextMenu({
-  messageId, isOwn, reactionsEnabled, onClose, onAction,
+  messageId, isOwn, reactionsEnabled, inThread, onClose, onAction,
 }: MessageContextMenuProps) {
   const dispatch = (a: string) => { onAction(a); onClose(); };
   return (
@@ -37,7 +38,7 @@ export function MessageContextMenu({
           enabled={reactionsEnabled}
           onPick={(emoji) => dispatch(`toggle-reaction:${messageId}:${emoji}`)}
         />
-        <Item icon={<Reply size={18} />} label="Reply in thread" onClick={() => dispatch(`reply-thread:${messageId}`)} />
+        {!inThread && <Item icon={<Reply size={18} />} label="Reply in thread" onClick={() => dispatch(`reply-thread:${messageId}`)} />}
         <Item icon={<Copy size={18} />} label="Copy text" onClick={() => dispatch(`copy-message:${messageId}`)} />
         {isOwn && <Item icon={<Trash2 size={18} />} label="Delete" onClick={() => dispatch(`delete-message:${messageId}`)} danger />}
       </div>
