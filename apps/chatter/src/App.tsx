@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { ConfiguratorLayout } from 'configurator-ui';
 import { MobileFrame } from './components/MobileFrame';
 import { useConfiguratorConfig } from './hooks/useConfiguratorConfig';
@@ -62,8 +62,17 @@ function buildHistoryForStep(screen: ScreenId, objectType: ObjectType): { screen
   return [];
 }
 
+// Simulated network delay for the "Loading skeletons" scenario.
+// Long enough that the skeleton is clearly visible before content snaps in.
+const LOADING_SIMULATION_MS = 4000;
+
 function App() {
   const [state, setState] = useState<AppState>(INITIAL_STATE);
+  const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
+  }, []);
 
   const hasUnread = state.notifications.some(n => !n.isRead);
 
@@ -412,6 +421,21 @@ function App() {
     const step = scenario.subScenarios[0].steps[stepIdx];
     if (!step) return;
 
+    // Cancel any in-flight loading simulation from a previous step.
+    if (loadingTimerRef.current) {
+      clearTimeout(loadingTimerRef.current);
+      loadingTimerRef.current = null;
+    }
+
+    const loading = step.loading || {};
+    // When loading.chat is set, the ChatScreen only renders the skeleton if
+    // there are no messages — so empty out the messages for this conversation
+    // during the simulated load.
+    const messagesForLoad = loading.chat
+      ? { ...INITIAL_MESSAGES, [step.currentObjectId]: [] }
+      : INITIAL_MESSAGES;
+    const notificationsForLoad = loading.notifications ? [] : INITIAL_NOTIFICATIONS;
+
     setState(prev => ({
       ...INITIAL_STATE,
       screen: step.screen,
@@ -420,11 +444,13 @@ function App() {
       activeTab: step.activeTab || 'home',
       newMessageText: step.newMessageText || '',
       screenHistory: buildHistoryForStep(step.screen, step.currentObjectType),
+      messages: messagesForLoad,
+      notifications: notificationsForLoad,
       // New:
       threadId: step.threadId,
       replyText: step.replyText || '',
       network: step.network || 'online',
-      loading: step.loading || {},
+      loading,
       errorState: step.errorState,
       reactionsEnabled: step.reactionsEnabled ?? true,
       unreadCounts: step.unreadCounts || {},
@@ -432,6 +458,22 @@ function App() {
       userName: prev.userName,
       userInitials: prev.userInitials,
     }));
+
+    // If this step demos a loading state, hold the skeleton for a clearly
+    // visible window, then "complete" the load by restoring data and clearing
+    // the loading flags.
+    const hasLoading = !!(loading.chat || loading.list || loading.notifications);
+    if (hasLoading) {
+      loadingTimerRef.current = setTimeout(() => {
+        setState(prev => ({
+          ...prev,
+          loading: {},
+          messages: INITIAL_MESSAGES,
+          notifications: INITIAL_NOTIFICATIONS,
+        }));
+        loadingTimerRef.current = null;
+      }, LOADING_SIMULATION_MS);
+    }
   }, []);
 
   const { configuratorConfig } = useConfiguratorConfig({
