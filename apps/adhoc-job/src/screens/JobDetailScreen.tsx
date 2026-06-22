@@ -5,7 +5,7 @@ import { JOBS, JOB_FORMS } from '../data/jobs';
 import { TopBar } from '../components/TopBar';
 import { StatusPicker, STATUS_DOT_COLORS } from '../components/StatusPicker';
 import { DirectionsDialog } from '../components/DirectionsDialog';
-import type { JobStatus, TimerState, ConfigOptions } from '../types';
+import type { JobStatus, TimerState, ConfigOptions, SyncError } from '../types';
 
 interface Props {
   jobId: string;
@@ -18,8 +18,31 @@ interface Props {
   showStatusPicker: boolean;
   config: ConfigOptions;
   hasCheckedOutToday: boolean;
+  pending: string | null;
+  error: SyncError | null;
   onAction: (action: string) => void;
 }
+
+const Spinner: React.FC<{ size?: number; color?: string }> = ({ size = 14, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" style={{ animation: 'adhoc-spin 0.8s linear infinite' }}>
+    <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="2.5" strokeLinecap="round"
+      fill="none" strokeDasharray="40" strokeDashoffset="20" />
+  </svg>
+);
+
+const ErrorBanner: React.FC<{ message: string }> = ({ message }) => (
+  <div style={{
+    padding: '10px 14px', borderRadius: radii.card,
+    background: '#FDECEA', border: '1px solid #F5C2C7',
+    marginBottom: 14, fontSize: 13, color: '#8B1A1A',
+    display: 'flex', alignItems: 'center', gap: 8,
+  }}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="2" style={{ flexShrink: 0 }}>
+      <circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>
+    </svg>
+    <span>{message}</span>
+  </div>
+);
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
@@ -31,13 +54,22 @@ function formatTime(seconds: number): string {
 export const JobDetailScreen: React.FC<Props> = ({
   jobId, jobStatus, isCheckedIn, timerState, timerDisplay,
   lastCheckIn, crewAvailable, showStatusPicker, config,
-  hasCheckedOutToday, onAction,
+  hasCheckedOutToday, pending, error, onAction,
 }) => {
   const job = JOBS.find(j => j.id === jobId) || JOBS[0];
   const isCaptured = timerState === 'captured';
   const isRunning = timerState === 'running';
   const isPaused = timerState === 'paused';
   const [showDirections, setShowDirections] = useState(false);
+  const checkPending = pending === 'check-in' || pending === 'check-out'
+    || pending === 'complete-check-in' || pending === 'complete-check-out';
+  const checkingIn = pending === 'check-in' || pending === 'complete-check-in';
+  const statusPending = pending?.startsWith('set-status:') ?? false;
+  const timerPending = pending === 'pause-timer';
+  const checkError = error && (error.key === 'check-in' || error.key === 'check-out'
+    || error.key === 'complete-check-in' || error.key === 'complete-check-out') ? error : null;
+  const statusError = error && error.key === 'set-status' ? error : null;
+  const timerError = error && error.key === 'pause-timer' ? error : null;
 
   // Gating: must be checked in to change status or start timer (when site check-in is enabled)
   const isGated = config.siteCheckInEnabled && !isCheckedIn;
@@ -130,24 +162,35 @@ export const JobDetailScreen: React.FC<Props> = ({
                 </div>
               ) : (
                 <button
-                  onClick={() => onAction(isCheckedIn ? 'check-out' : 'check-in')}
+                  onClick={() => !checkPending && onAction(isCheckedIn ? 'check-out' : 'check-in')}
+                  disabled={checkPending}
                   style={{
                     width: '100%', padding: '12px 0', borderRadius: radii.pill,
                     border: isCheckedIn ? `1px solid ${colors.border}` : 'none',
                     background: isCheckedIn ? colors.surface : colors.brandTeal,
                     color: isCheckedIn ? colors.textPrimary : '#fff',
-                    fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                    fontSize: 15, fontWeight: 600,
+                    cursor: checkPending ? 'wait' : 'pointer',
+                    opacity: checkPending ? 0.75 : 1,
+                    fontFamily: 'inherit',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 14,
                   }}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={isCheckedIn ? colors.textPrimary : '#fff'} strokeWidth="2">
-                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                    <path d="M23 11h-6"/>
-                    {!isCheckedIn && <path d="M20 8v6"/>}
-                  </svg>
-                  {isCheckedIn ? 'No - Check out of site' : 'Yes - Check into site'}
+                  {checkPending ? (
+                    <Spinner size={18} color={isCheckedIn ? colors.textPrimary : '#fff'} />
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={isCheckedIn ? colors.textPrimary : '#fff'} strokeWidth="2">
+                      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                      <path d="M23 11h-6"/>
+                      {!isCheckedIn && <path d="M20 8v6"/>}
+                    </svg>
+                  )}
+                  {checkPending
+                    ? (checkingIn ? 'Checking in…' : 'Checking out…')
+                    : (isCheckedIn ? 'No - Check out of site' : 'Yes - Check into site')}
                 </button>
               )}
+              {checkError && <ErrorBanner message={checkError.message} />}
             </>
           )}
 
@@ -175,21 +218,31 @@ export const JobDetailScreen: React.FC<Props> = ({
           {/* Job Status */}
           <div style={{ fontSize: 12, color: isGated ? colors.textTertiary : colors.textSecondary, marginBottom: 4 }}>Job status</div>
           <button
-            onClick={() => !isGated && onAction('open-status-picker')}
+            onClick={() => !isGated && !statusPending && onAction('open-status-picker')}
+            disabled={statusPending}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
               padding: '10px 0', border: 'none', borderBottom: `1px solid ${colors.borderLight}`,
-              background: 'none', cursor: isGated ? 'not-allowed' : 'pointer', fontFamily: 'inherit', marginBottom: 14,
+              background: 'none',
+              cursor: isGated ? 'not-allowed' : (statusPending ? 'wait' : 'pointer'),
+              fontFamily: 'inherit', marginBottom: 14,
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: isGated ? colors.textTertiary : (STATUS_DOT_COLORS[jobStatus] || colors.textTertiary) }} />
-              <span style={{ fontSize: 15, color: isGated ? colors.textTertiary : colors.textPrimary }}>{jobStatus}</span>
+              <span style={{ fontSize: 15, color: isGated ? colors.textTertiary : colors.textPrimary }}>
+                {statusPending ? `Updating to ${pending!.replace('set-status:', '')}…` : jobStatus}
+              </span>
             </div>
-            <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
-              <path d="M1 1l5 5 5-5" stroke={isGated ? colors.textTertiary : colors.textSecondary} strokeWidth="2" strokeLinecap="round"/>
-            </svg>
+            {statusPending ? (
+              <Spinner size={14} color={colors.textSecondary} />
+            ) : (
+              <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
+                <path d="M1 1l5 5 5-5" stroke={isGated ? colors.textTertiary : colors.textSecondary} strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            )}
           </button>
+          {statusError && <ErrorBanner message={statusError.message} />}
 
           {/* Timer — only when time tracking is enabled */}
           {config.timeTrackingEnabled && (
@@ -200,22 +253,25 @@ export const JobDetailScreen: React.FC<Props> = ({
                   <span style={{ fontSize: 14, color: colors.textTertiary }}>Time captured</span>
                 ) : (
                   <button
-                    onClick={() => !isGated && onAction(isRunning ? 'pause-timer' : 'start-timer')}
+                    onClick={() => !isGated && !timerPending && onAction(isRunning ? 'pause-timer' : 'start-timer')}
+                    disabled={timerPending}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 8,
                       background: 'none', border: 'none',
-                      cursor: isGated ? 'not-allowed' : 'pointer',
+                      cursor: isGated ? 'not-allowed' : (timerPending ? 'wait' : 'pointer'),
                       fontFamily: 'inherit',
                       color: isGated ? colors.textTertiary : colors.textPrimary,
                       fontSize: 14,
                     }}
                   >
-                    {isRunning ? (
+                    {timerPending ? (
+                      <Spinner size={16} color={colors.textPrimary} />
+                    ) : isRunning ? (
                       <svg width="16" height="16" viewBox="0 0 24 24" fill={isGated ? colors.textTertiary : colors.textPrimary}><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
                     ) : (
                       <svg width="16" height="16" viewBox="0 0 24 24" fill={isGated ? colors.textTertiary : colors.textPrimary}><path d="M8 5v14l11-7z"/></svg>
                     )}
-                    {isRunning ? 'Pause' : isPaused ? 'Resume' : 'Start'}
+                    {timerPending ? 'Syncing…' : isRunning ? 'Pause' : isPaused ? 'Resume' : 'Start'}
                   </button>
                 )}
                 <span style={{
@@ -225,6 +281,7 @@ export const JobDetailScreen: React.FC<Props> = ({
                   {formatTime(timerDisplay)}
                 </span>
               </div>
+              {timerError && <div style={{ marginTop: 12 }}><ErrorBanner message={timerError.message} /></div>}
             </>
           )}
         </div>

@@ -5,10 +5,11 @@ interface Props {
   mode: 'check-in' | 'check-out';
   formToggle: boolean;
   onToggle: () => void;
+  onBack: () => void;
   onClose: () => void;
 }
 
-export const FormDetailScreen: React.FC<Props> = ({ mode, formToggle, onToggle, onClose }) => {
+export const FormDetailScreen: React.FC<Props> = ({ mode, formToggle, onToggle, onBack, onClose }) => {
   const isCheckIn = mode === 'check-in';
 
   return (
@@ -18,7 +19,7 @@ export const FormDetailScreen: React.FC<Props> = ({ mode, formToggle, onToggle, 
         height: 44, display: 'flex', alignItems: 'center', padding: '0 12px',
         background: colors.surface, borderBottom: `1px solid ${colors.border}`, flexShrink: 0,
       }}>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex' }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex' }}>
           <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
             <path d="M9 1L1 9l8 8" stroke={colors.textPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>

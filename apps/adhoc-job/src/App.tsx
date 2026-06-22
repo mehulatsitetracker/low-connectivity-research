@@ -9,7 +9,7 @@ import { FormDetailScreen } from './screens/FormDetailScreen';
 import { CrewListScreen } from './screens/CrewListScreen';
 import { SCENARIOS } from './data/scenarios';
 import { JOBS, CREW_MEMBERS } from './data/jobs';
-import type { ScreenId, JobStatus, TimerState, JobTimer, ConfigOptions, CrewMemberStatus } from './types';
+import type { ScreenId, JobStatus, TimerState, JobTimer, ConfigOptions, CrewMemberStatus, SyncError } from './types';
 
 // ─── Per-job timer state ─────────────────────────────────────
 function defaultJobTimers(): Record<string, JobTimer> {
@@ -74,14 +74,47 @@ const DEFAULT_CONFIG: ConfigOptions = {
   checkInFormRequired: true,
   timeTrackingEnabled: true,
   allowMultipleCheckIn: true,
+  simulateLatency: false,
+  simulateError: false,
+};
+
+const ERROR_MESSAGES: Record<string, string> = {
+  'pause-timer': "Couldn't sync time entry",
+  'set-status': "Couldn't update job status",
+  'check-in': 'Check-in failed',
+  'check-out': 'Check-out failed',
+  'complete-check-in': 'Check-in failed',
+  'complete-check-out': 'Check-out failed',
 };
 
 function App() {
   const [state, setState] = useState<AppState>(INITIAL_STATE);
   const [config, setConfig] = useState<ConfigOptions>(DEFAULT_CONFIG);
   const [elapsed, setElapsed] = useState(0);
+  const [pending, setPending] = useState<string | null>(null);
+  const [error, setError] = useState<SyncError | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerStartRef = useRef<number>(0);
+  const configRef = useRef(config);
+  configRef.current = config;
+
+  // ponytail: setTimeout sim; swap for real async when backend exists
+  const runAsync = useCallback((key: string, fn: () => void) => {
+    setPending(key);
+    setError(null);
+    const cfg = configRef.current;
+    const delay = cfg.simulateLatency ? 1200 : 0;
+    setTimeout(() => {
+      if (configRef.current.simulateError) {
+        const errKey = key.split(':')[0] as SyncError['key'];
+        setError({ key: errKey, message: ERROR_MESSAGES[errKey] || 'Sync failed' });
+        setPending(null);
+        return;
+      }
+      fn();
+      setPending(null);
+    }, delay);
+  }, []);
 
   // Configurator state
   const [scenarioIndex, setScenarioIndex] = useState(0);
@@ -168,7 +201,7 @@ function App() {
         if (config.checkInFormRequired) {
           navigateTo('site-checkin');
         } else {
-          setState(prev => {
+          runAsync('check-in', () => setState(prev => {
             const currentUserName = CREW_MEMBERS.find(m => m.isCurrentUser)?.name;
             const newCrewStatuses = currentUserName
               ? { ...prev.crewStatuses, [currentUserName]: 'Checked-In' as CrewMemberStatus }
@@ -178,7 +211,7 @@ function App() {
               lastCheckIn: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               crewStatuses: newCrewStatuses,
             };
-          });
+          }));
         }
       }
       return;
@@ -188,7 +221,7 @@ function App() {
         if (config.checkInFormRequired) {
           navigateTo('site-checkout');
         } else {
-          setState(prev => {
+          runAsync('check-out', () => setState(prev => {
             const pausedTimers = { ...prev.jobTimers };
             for (const jid of Object.keys(pausedTimers)) {
               if (pausedTimers[jid].state === 'running') {
@@ -200,28 +233,36 @@ function App() {
               ? { ...prev.crewStatuses, [currentUserName]: 'Checked-Out' as CrewMemberStatus }
               : prev.crewStatuses;
             return { ...prev, isCheckedIn: false, hasCheckedOutToday: true, jobTimers: pausedTimers, crewStatuses: newCrewStatuses };
-          });
+          }));
         }
       }
       return;
     }
     if (action === 'complete-check-in') {
-      setState(prev => {
+      // Navigate back immediately; sync continues in background. Keep formToggle so retry is prefilled.
+      setState(prev => ({
+        ...prev, screen: 'job-detail',
+        screenHistory: prev.screenHistory.filter(s => s !== 'site-checkin' && s !== 'checkin-form'),
+      }));
+      runAsync('complete-check-in', () => setState(prev => {
         const currentUserName = CREW_MEMBERS.find(m => m.isCurrentUser)?.name;
         const newCrewStatuses = currentUserName
           ? { ...prev.crewStatuses, [currentUserName]: 'Checked-In' as CrewMemberStatus }
           : prev.crewStatuses;
         return {
-          ...prev, screen: 'job-detail', isCheckedIn: true,
+          ...prev, isCheckedIn: true,
           lastCheckIn: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           formToggle: false, crewStatuses: newCrewStatuses,
-          screenHistory: prev.screenHistory.filter(s => s !== 'site-checkin' && s !== 'checkin-form'),
         };
-      });
+      }));
       return;
     }
     if (action === 'complete-check-out') {
-      setState(prev => {
+      setState(prev => ({
+        ...prev, screen: 'job-detail',
+        screenHistory: prev.screenHistory.filter(s => s !== 'site-checkout' && s !== 'checkout-form'),
+      }));
+      runAsync('complete-check-out', () => setState(prev => {
         const pausedTimers = { ...prev.jobTimers };
         for (const jid of Object.keys(pausedTimers)) {
           if (pausedTimers[jid].state === 'running') {
@@ -233,11 +274,10 @@ function App() {
           ? { ...prev.crewStatuses, [currentUserName]: 'Checked-Out' as CrewMemberStatus }
           : prev.crewStatuses;
         return {
-          ...prev, screen: 'job-detail', isCheckedIn: false, hasCheckedOutToday: true,
+          ...prev, isCheckedIn: false, hasCheckedOutToday: true,
           jobTimers: pausedTimers, crewStatuses: newCrewStatuses, formToggle: false,
-          screenHistory: prev.screenHistory.filter(s => s !== 'site-checkout' && s !== 'checkout-form'),
         };
-      });
+      }));
       return;
     }
 
@@ -254,7 +294,9 @@ function App() {
     if (action === 'close-status-picker') { setState(prev => ({ ...prev, showStatusPicker: false })); return; }
     if (action.startsWith('set-status:')) {
       const newStatus = action.replace('set-status:', '') as JobStatus;
-      setState(prev => {
+      // Close the picker immediately so the spinner on the status row is visible.
+      setState(prev => ({ ...prev, showStatusPicker: false }));
+      runAsync(action, () => setState(prev => {
         const jobId = prev.currentJobId;
         const timer = prev.jobTimers[jobId];
         let newTimerState: TimerState = timer.state;
@@ -269,9 +311,8 @@ function App() {
           ...prev,
           jobStatuses: { ...prev.jobStatuses, [jobId]: newStatus },
           jobTimers: { ...prev.jobTimers, [jobId]: { state: newTimerState, accumulated: newAccumulated } },
-          showStatusPicker: false,
         };
-      });
+      }));
       return;
     }
 
@@ -282,7 +323,8 @@ function App() {
     }
     if (action === 'pause-timer') {
       const acc = currentTimer.accumulated + elapsed;
-      updateJobTimer(state.currentJobId, { state: 'paused', accumulated: acc });
+      const jobId = state.currentJobId;
+      runAsync('pause-timer', () => updateJobTimer(jobId, { state: 'paused', accumulated: acc }));
       return;
     }
 
@@ -310,7 +352,7 @@ function App() {
       setState(prev => ({ ...prev, crewStatuses: { ...prev.crewStatuses, [memberName]: newStatus } }));
       return;
     }
-  }, [goBack, navigateTo, elapsed, config, state.isCheckedIn, state.currentJobId, currentTimer, updateJobTimer, state.hasCheckedOutToday]);
+  }, [goBack, navigateTo, elapsed, config, state.isCheckedIn, state.currentJobId, currentTimer, updateJobTimer, state.hasCheckedOutToday, runAsync]);
 
   // ─── Snapshot loader ───────────────────────────────────────
   const loadSnapshot = useCallback((scenIdx: number, subIdx: number, stepIdx: number) => {
@@ -338,6 +380,8 @@ function App() {
 
     const isLeaderSub = sub.id === 'crew-leader';
 
+    setPending(null);
+    setError(null);
     setState({
       screen: step.screen === 'status-picker' ? 'job-detail' : step.screen,
       currentJobId: step.jobId,
@@ -384,17 +428,19 @@ function App() {
             showStatusPicker={state.showStatusPicker}
             config={config}
             hasCheckedOutToday={state.hasCheckedOutToday}
+            pending={pending}
+            error={error}
             onAction={handleAction}
           />
         );
       case 'site-checkin':
         return <SiteFormScreen mode="check-in" jobId={state.currentJobId} onOpenForm={() => handleAction('open-checkin-form')} onBack={() => goBack()} />;
       case 'checkin-form':
-        return <FormDetailScreen mode="check-in" formToggle={state.formToggle} onToggle={() => handleAction('toggle-form')} onClose={() => handleAction('complete-check-in')} />;
+        return <FormDetailScreen mode="check-in" formToggle={state.formToggle} onToggle={() => handleAction('toggle-form')} onBack={() => goBack()} onClose={() => handleAction('complete-check-in')} />;
       case 'site-checkout':
         return <SiteFormScreen mode="check-out" jobId={state.currentJobId} onOpenForm={() => handleAction('open-checkout-form')} onBack={() => goBack()} />;
       case 'checkout-form':
-        return <FormDetailScreen mode="check-out" formToggle={state.formToggle} onToggle={() => handleAction('toggle-form')} onClose={() => handleAction('complete-check-out')} />;
+        return <FormDetailScreen mode="check-out" formToggle={state.formToggle} onToggle={() => handleAction('toggle-form')} onBack={() => goBack()} onClose={() => handleAction('complete-check-out')} />;
       case 'crew-list':
         return <CrewListScreen crewStatuses={state.crewStatuses} isLeader={state.isLeader} onBack={() => goBack()} onAction={handleAction} />;
       default:

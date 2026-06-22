@@ -62,6 +62,9 @@ function DeveloperSettingsContent({
         </>
       )}
       <ToggleRow on={config.timeTrackingEnabled} onChange={(v) => update('timeTrackingEnabled', v)} label="Time Tracking" />
+      <div style={{ height: 1, background: '#333', margin: '8px 0 4px' }} />
+      <ToggleRow on={config.simulateLatency} onChange={(v) => update('simulateLatency', v)} label="Simulate latency (1.2s)" />
+      <ToggleRow on={config.simulateError} onChange={(v) => update('simulateError', v)} label="Simulate sync errors" />
     </div>
   );
 }

@@ -83,4 +83,11 @@ export interface ConfigOptions {
   checkInFormRequired: boolean;   // require form before check-in completes
   timeTrackingEnabled: boolean;   // show timer section
   allowMultipleCheckIn: boolean;  // allow re-check-in same day after checking out
+  simulateLatency: boolean;       // 1.2s delay on sync actions
+  simulateError: boolean;         // force sync failures
+}
+
+export interface SyncError {
+  key: 'check-in' | 'check-out' | 'complete-check-in' | 'complete-check-out' | 'set-status' | 'pause-timer';
+  message: string;
 }
