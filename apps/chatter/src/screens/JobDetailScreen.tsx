@@ -49,7 +49,12 @@ export function JobDetailScreen({ jobId, activeTab, onAction, unreadCount = 0 }:
       <div style={{ flex: 1, overflow: 'auto' }}>
         {/* Job Info */}
         <div style={{ padding: '12px 16px', background: colors.surface, borderBottom: `1px solid ${colors.borderLight}` }}>
-          <div style={{ fontWeight: 700, fontSize: 18, color: colors.textPrimary }}>{job.id}</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <div style={{ fontWeight: 700, fontSize: 18, color: colors.textPrimary }}>{job.id}</div>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill={colors.textPrimary} aria-label="Available offline">
+              <path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+            </svg>
+          </div>
           <div style={{ fontSize: 14, color: colors.textSecondary, marginTop: 2 }}>{job.templateName}</div>
         </div>
 

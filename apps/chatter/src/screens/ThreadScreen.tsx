@@ -10,7 +10,6 @@ interface ThreadScreenProps {
   threadId: string;
   messages: ChatMessage[];
   replyText: string;
-  reactionsEnabled: boolean;
   onAction: (action: string) => void;
   onReplyChange: (text: string) => void;
   userName?: string;
@@ -18,7 +17,7 @@ interface ThreadScreenProps {
 }
 
 export function ThreadScreen({
-  threadId, messages, replyText, reactionsEnabled, onAction, onReplyChange,
+  threadId, messages, replyText, onAction, onReplyChange,
   userName, userInitials,
 }: ThreadScreenProps) {
   const [menuForId, setMenuForId] = useState<string | null>(null);
@@ -41,11 +40,11 @@ export function ThreadScreen({
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px' }}>
         <div style={{ background: colors.surfaceAlt, borderRadius: 8, padding: '8px 12px', marginBottom: 8 }}>
-          <ChatMessageComponent message={parent} reactionsEnabled={reactionsEnabled} onAction={onAction} onLongPress={() => setMenuForId(parent.id)} userName={userName} userInitials={userInitials} />
+          <ChatMessageComponent message={parent} onAction={onAction} onLongPress={() => setMenuForId(parent.id)} userName={userName} userInitials={userInitials} />
         </div>
         <div style={{ height: 1, background: colors.borderLight, margin: '8px 0 12px' }} />
         {replies.map(r => (
-          <ChatMessageComponent key={r.id} message={r} reactionsEnabled={reactionsEnabled} onAction={onAction} onLongPress={() => setMenuForId(r.id)} userName={userName} userInitials={userInitials} />
+          <ChatMessageComponent key={r.id} message={r} onAction={onAction} onLongPress={() => setMenuForId(r.id)} userName={userName} userInitials={userInitials} />
         ))}
       </div>
       <MessageInput
@@ -58,7 +57,6 @@ export function ThreadScreen({
         <MessageContextMenu
           messageId={menuForId}
           isOwn={[parent, ...replies].find(m => m.id === menuForId)?.senderId === 'current-user'}
-          reactionsEnabled={reactionsEnabled}
           inThread={true}
           onClose={() => setMenuForId(null)}
           onAction={onAction}

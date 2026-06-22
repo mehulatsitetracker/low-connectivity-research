@@ -18,8 +18,6 @@ import { INITIAL_NOTIFICATIONS } from './data/notifications';
 import { SCENARIOS } from './data/scenarios';
 import type { AppState, ScreenId, ObjectType, ChatMessage } from './types';
 
-const CURRENT_USER_ID = 'current-user';
-
 function computeInitials(name: string): string {
   const trimmed = name.trim();
   if (!trimmed) return 'YO';
@@ -42,7 +40,6 @@ const INITIAL_STATE: AppState = {
   replyText: '',
   network: 'online',
   loading: {},
-  reactionsEnabled: true,
   unreadCounts: {},
   userName: 'You',
   userInitials: 'YO',
@@ -101,6 +98,16 @@ function App() {
   }, []);
 
   const handleAction = useCallback((action: string) => {
+    // ponytail: prototype "network" — simulate ~800ms send latency before clearing the sending flag
+    const clearSendingLater = (id: string) => {
+      setTimeout(() => setState(prev => ({
+        ...prev,
+        messages: Object.fromEntries(
+          Object.entries(prev.messages).map(([k, list]) => [k, list.map(m => m.id === id ? { ...m, sending: false } : m)])
+        ),
+      })), 800);
+    };
+
     if (action === 'back') { goBack(); return; }
     if (action === 'go-notifications') { navigateTo('notifications'); return; }
 
@@ -156,11 +163,12 @@ function App() {
 
     // Send message
     if (action === 'send-message') {
+      const newMsgId = `msg-${Date.now()}`;
       setState(prev => {
         const text = prev.newMessageText.trim();
         if (!text) return prev;
         const newMsg = {
-          id: `msg-${Date.now()}`,
+          id: newMsgId,
           senderId: 'current-user',
           senderName: prev.userName,
           senderInitials: prev.userInitials,
@@ -170,6 +178,7 @@ function App() {
           objectId: prev.currentObjectId,
           objectType: prev.currentObjectType,
           mentions: text.match(/@(\w+ \w+)/g)?.map(m => m.slice(1)) || undefined,
+          sending: true,
         };
         const existing = prev.messages[prev.currentObjectId] || [];
         return {
@@ -178,6 +187,7 @@ function App() {
           newMessageText: '',
         };
       });
+      clearSendingLater(newMsgId);
       return;
     }
 
@@ -185,6 +195,7 @@ function App() {
     if (action.startsWith('send-attachments:')) {
       const jsonStr = action.replace('send-attachments:', '');
       const attachments = JSON.parse(jsonStr) as { name: string; type: string }[];
+      const newMsgId = `msg-${Date.now()}`;
       setState(prev => {
         const caption = prev.newMessageText.trim();
         const hasFiles = attachments.some(a => a.type === 'file');
@@ -193,7 +204,7 @@ function App() {
           ? `Shared ${hasFiles ? 'a document' : 'a photo'}`
           : `Shared ${count} ${hasFiles ? 'files' : 'photos'}`;
         const newMsg = {
-          id: `msg-${Date.now()}`,
+          id: newMsgId,
           senderId: 'current-user',
           senderName: prev.userName,
           senderInitials: prev.userInitials,
@@ -204,6 +215,7 @@ function App() {
           objectType: prev.currentObjectType,
           attachment: attachments[0],
           attachments,
+          sending: true,
         };
         const existing = prev.messages[prev.currentObjectId] || [];
         return {
@@ -212,6 +224,7 @@ function App() {
           newMessageText: '',
         };
       });
+      clearSendingLater(newMsgId);
       return;
     }
 
@@ -278,55 +291,48 @@ function App() {
       return;
     }
 
-    // Per-message retry
+    // Per-message retry — move resent message to the bottom with a fresh timestamp
     if (action.startsWith('retry-send:')) {
       const id = action.replace('retry-send:', '');
       setState(prev => {
         const list = prev.messages[prev.currentObjectId] || [];
+        const target = list.find(m => m.id === id);
+        if (!target) return prev;
+        const rest = list.filter(m => m.id !== id);
+        const resent = {
+          ...target,
+          failed: false,
+          sending: true,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          date: 'Today',
+        };
         return {
           ...prev,
           messages: {
             ...prev.messages,
-            [prev.currentObjectId]: list.map(m => m.id === id ? { ...m, failed: false } : m),
+            [prev.currentObjectId]: [...rest, resent],
           },
         };
       });
+      clearSendingLater(id);
       return;
     }
 
-    // Toggle reaction
-    if (action.startsWith('toggle-reaction:')) {
-      const [, id, emoji] = action.split(':');
+    // Toggle like
+    if (action.startsWith('toggle-like:')) {
+      const id = action.replace('toggle-like:', '');
       setState(prev => {
         const list = prev.messages[prev.currentObjectId] || [];
         return {
           ...prev,
           messages: {
             ...prev.messages,
-            [prev.currentObjectId]: list.map(m => {
-              if (m.id !== id) return m;
-              const groups = (m.reactions || []).slice();
-              const idx = groups.findIndex(g => g.emoji === emoji);
-              if (idx === -1) {
-                groups.push({ emoji, userIds: [CURRENT_USER_ID] });
-              } else {
-                const g = groups[idx];
-                const has = g.userIds.includes(CURRENT_USER_ID);
-                const newIds = has ? g.userIds.filter(u => u !== CURRENT_USER_ID) : [...g.userIds, CURRENT_USER_ID];
-                if (newIds.length === 0) groups.splice(idx, 1);
-                else groups[idx] = { ...g, userIds: newIds };
-              }
-              return { ...m, reactions: groups };
-            }),
+            [prev.currentObjectId]: list.map(m =>
+              m.id === id ? { ...m, liked: !m.liked } : m
+            ),
           },
         };
       });
-      return;
-    }
-
-    // Simulate reaction fail
-    if (action.startsWith('simulate-reaction-fail:')) {
-      setState(prev => ({ ...prev, toast: { message: "Couldn't save reaction", tone: 'error' } }));
       return;
     }
 
@@ -377,11 +383,12 @@ function App() {
 
     // Send a reply inside a thread
     if (action === 'send-reply') {
+      const newMsgId = `msg-${Date.now()}`;
       setState(prev => {
         const text = prev.replyText.trim();
         if (!text || !prev.threadId) return prev;
         const newMsg: ChatMessage = {
-          id: `msg-${Date.now()}`,
+          id: newMsgId,
           senderId: 'current-user',
           senderName: prev.userName,
           senderInitials: prev.userInitials,
@@ -391,11 +398,12 @@ function App() {
           objectId: prev.currentObjectId,
           objectType: prev.currentObjectType,
           parentId: prev.threadId,
+          sending: true,
         };
         const list = prev.messages[prev.currentObjectId] || [];
         const updated = list.map(m =>
           m.id === prev.threadId
-            ? { ...m, replyCount: (m.replyCount || 0) + 1, lastReplyAt: 'now' }
+            ? { ...m, replyCount: (m.replyCount || 0) + 1 }
             : m
         );
         return {
@@ -404,6 +412,7 @@ function App() {
           replyText: '',
         };
       });
+      clearSendingLater(newMsgId);
       return;
     }
 
@@ -452,7 +461,6 @@ function App() {
       network: step.network || 'online',
       loading,
       errorState: step.errorState,
-      reactionsEnabled: step.reactionsEnabled ?? true,
       unreadCounts: step.unreadCounts || {},
       // Preserve user name across snapshot loads
       userName: prev.userName,
@@ -515,7 +523,6 @@ function App() {
             network={state.network}
             loading={state.loading.chat}
             errorState={state.errorState}
-            reactionsEnabled={state.reactionsEnabled}
             toast={state.toast}
             userName={state.userName}
             userInitials={state.userInitials}
@@ -537,7 +544,6 @@ function App() {
             threadId={state.threadId}
             messages={state.messages[state.currentObjectId] || []}
             replyText={state.replyText}
-            reactionsEnabled={state.reactionsEnabled}
             onAction={handleAction}
             onReplyChange={(text) => setState(prev => ({ ...prev, replyText: text }))}
             userName={state.userName}

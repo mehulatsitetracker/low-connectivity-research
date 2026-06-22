@@ -25,7 +25,6 @@ interface ChatScreenProps {
   network?: 'online' | 'offline';
   loading?: boolean;
   errorState?: AppState['errorState'];
-  reactionsEnabled?: boolean;
   toast?: AppState['toast'];
   userName?: string;
   userInitials?: string;
@@ -121,7 +120,7 @@ function NotificationModal({
 export function ChatScreen({
   objectId, objectType, messages, newMessageText, notificationsEnabled,
   onAction, onMessageChange,
-  network = 'online', loading, errorState, reactionsEnabled = true, toast,
+  network = 'online', loading, errorState, toast,
   userName, userInitials,
 }: ChatScreenProps) {
   const title = getObjectName(objectId, objectType);
@@ -132,15 +131,6 @@ export function ChatScreen({
   const containerStyle: React.CSSProperties = {
     flex: 1, display: 'flex', flexDirection: 'column',
     background: colors.surface, position: 'relative',
-  };
-
-  // Reaction-fail interception: when errorState === 'reaction-fail', reroute toggle-reaction to simulate failure
-  const messageOnAction = (a: string) => {
-    if (errorState === 'reaction-fail' && a.startsWith('toggle-reaction:')) {
-      onAction(a.replace('toggle-reaction:', 'simulate-reaction-fail:'));
-      return;
-    }
-    onAction(a);
   };
 
   const header = (
@@ -225,8 +215,7 @@ export function ChatScreen({
             <ChatMessageComponent
               key={msg.id}
               message={msg}
-              reactionsEnabled={reactionsEnabled}
-              onAction={messageOnAction}
+              onAction={onAction}
               onLongPress={() => setMenuForId(msg.id)}
               userName={userName}
               userInitials={userInitials}
@@ -239,9 +228,8 @@ export function ChatScreen({
         <MessageContextMenu
           messageId={menuForId}
           isOwn={(messages.find(m => m.id === menuForId)?.senderId) === 'current-user'}
-          reactionsEnabled={reactionsEnabled}
           onClose={() => setMenuForId(null)}
-          onAction={messageOnAction}
+          onAction={onAction}
         />
       )}
       {showModal && (

@@ -7,7 +7,6 @@ interface MessageIconButtonProps {
 }
 
 export function MessageIconButton({ unreadCount = 0, onClick }: MessageIconButtonProps) {
-  const display = unreadCount > 99 ? '99+' : unreadCount;
   return (
     <button onClick={onClick} style={{
       background: 'none', border: 'none', color: '#fff', cursor: 'pointer',
@@ -17,15 +16,11 @@ export function MessageIconButton({ unreadCount = 0, onClick }: MessageIconButto
       {unreadCount > 0 && (
         <div style={{
           position: 'absolute',
-          top: -2, right: -4,
-          minWidth: 18, height: 18, padding: '0 5px',
-          borderRadius: 9, background: colors.error,
-          color: '#fff', fontSize: 11, fontWeight: 700,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          top: 2, right: 0,
+          width: 8, height: 8,
+          borderRadius: '50%', background: colors.error,
           border: `1.5px solid ${colors.topBar}`,
-        }}>
-          {display}
-        </div>
+        }} />
       )}
     </button>
   );

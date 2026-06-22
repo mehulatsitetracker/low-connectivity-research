@@ -41,11 +41,6 @@ export interface Project {
   type: string;
 }
 
-export interface ReactionGroup {
-  emoji: string;            // "👍" | "❤️" | "😂" | "🎉" | "👀" | "✅" | "like" (org-disabled fallback)
-  userIds: string[];        // count derived from .length
-}
-
 export interface ChatMessage {
   id: string;
   senderId: string;
@@ -61,9 +56,9 @@ export interface ChatMessage {
   mentions?: string[];
   parentId?: string;
   replyCount?: number;
-  lastReplyAt?: string;
-  reactions?: ReactionGroup[];
+  liked?: boolean;
   failed?: boolean;
+  sending?: boolean;
 }
 
 export interface Notification {
@@ -95,11 +90,9 @@ export interface FlowStep {
     | 'load-fail'
     | 'older-fail'
     | 'attachment-fail'
-    | 'reaction-fail'
     | 'mention-fail'
     | 'permission-denied'
     | 'notif-load-fail';
-  reactionsEnabled?: boolean;
   unreadCounts?: Record<string, number>;
 }
 
@@ -131,7 +124,6 @@ export interface AppState {
   network: 'online' | 'offline';
   loading: { chat?: boolean; list?: boolean; notifications?: boolean };
   errorState?: FlowStep['errorState'];
-  reactionsEnabled: boolean;
   unreadCounts: Record<string, number>;
   toast?: { message: string; tone?: 'error' | 'info' };
   userName: string;

@@ -28,11 +28,7 @@ export const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
       objectId: 'J-004892',
       objectType: 'job',
       replyCount: 3,
-      lastReplyAt: '2m ago',
-      reactions: [
-        { emoji: '👍', userIds: ['u-rosa', 'u-jordan'] },
-        { emoji: '❤️', userIds: ['u-david'] },
-      ],
+      liked: true,
     },
     {
       id: 'msg-thread-reply-1',
@@ -57,7 +53,7 @@ export const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
       objectId: 'J-004892',
       objectType: 'job',
       parentId: 'msg-thread-parent-1',
-      reactions: [{ emoji: '🎉', userIds: ['current-user'] }],
+      liked: true,
     },
     {
       id: 'msg-thread-reply-3',

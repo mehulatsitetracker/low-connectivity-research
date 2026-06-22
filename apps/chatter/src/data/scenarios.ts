@@ -66,27 +66,6 @@ export const SCENARIOS: ScenarioDef[] = [
     }],
   },
   {
-    id: 'reactions',
-    name: 'Reactions',
-    description: 'Full reaction set vs. likes-only (org permission)',
-    subScenarios: [
-      {
-        id: 'enabled',
-        name: 'Org enabled',
-        steps: [
-          { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: 'Chat with reactions visible', reactionsEnabled: true },
-        ],
-      },
-      {
-        id: 'disabled',
-        name: 'Org disabled (likes only)',
-        steps: [
-          { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: 'Chat with likes only', reactionsEnabled: false },
-        ],
-      },
-    ],
-  },
-  {
     id: 'empty-chat',
     name: 'Empty chat',
     description: 'Record with no messages — empty state with quick chips',
@@ -177,10 +156,9 @@ export const SCENARIOS: ScenarioDef[] = [
         { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: '2. Initial chat load fail', errorState: 'load-fail' },
         { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: '3. Load older messages fail', errorState: 'older-fail' },
         { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: '4. Attachment upload fail', errorState: 'attachment-fail' },
-        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: '5. Reaction fail (tap any reaction to trigger toast)', errorState: 'reaction-fail' },
-        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: '6. @mention search fail', errorState: 'mention-fail' },
-        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: '7. Permission denied (composer replaced)', errorState: 'permission-denied' },
-        { screen: 'notifications', currentObjectId: '', currentObjectType: 'job', label: '8. Notification list load fail', errorState: 'notif-load-fail' },
+        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: '5. @mention search fail', errorState: 'mention-fail' },
+        { screen: 'chat', currentObjectId: 'J-004892', currentObjectType: 'job', label: '6. Permission denied (composer replaced)', errorState: 'permission-denied' },
+        { screen: 'notifications', currentObjectId: '', currentObjectType: 'job', label: '7. Notification list load fail', errorState: 'notif-load-fail' },
       ],
     }],
   },

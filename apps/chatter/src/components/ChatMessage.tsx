@@ -1,13 +1,11 @@
 import { useRef } from 'react';
 import { colors } from '../theme';
 import { Avatar } from './Avatar';
-import { Paperclip, AlertCircle, MessageCircle } from 'lucide-react';
+import { Paperclip, MessageCircle, RefreshCw, ThumbsUp } from 'lucide-react';
 import type { ChatMessage as ChatMessageType } from '../types';
-import { ReactionPills } from './ReactionPills';
 
 interface ChatMessageProps {
   message: ChatMessageType;
-  reactionsEnabled?: boolean;
   onAction?: (action: string) => void;
   onLongPress?: () => void;
   userName?: string;
@@ -64,34 +62,55 @@ export function ChatMessageComponent({ message, onAction, onLongPress, userName,
       onMouseDown={startPress} onMouseUp={cancelPress} onMouseLeave={cancelPress}
       onTouchStart={startPress} onTouchEnd={cancelPress} onTouchCancel={cancelPress}
     >
-      <Avatar initials={displayInitials} size={40} />
+      <div style={{ opacity: message.failed ? 0.5 : 1 }}>
+        <Avatar initials={displayInitials} size={40} />
+      </div>
       <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'flex-start' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 2 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>{displayName}</span>
-            <span style={{ fontSize: 12, color: colors.textTertiary }}>
-              {message.date ? `${message.date}, ${message.timestamp}` : message.timestamp}
-            </span>
-          </div>
-          <div style={{ fontSize: 14, color: message.failed ? colors.textTertiary : colors.textSecondary, lineHeight: 1.5 }}>
-            {renderTextWithMentions(message.text, message.mentions)}
-          </div>
-          {/* Render all attachments, or fall back to single attachment */}
-          {(message.attachments || (message.attachment ? [message.attachment] : [])).map((att, i) => (
-            <div key={i} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: colors.surfaceAlt, border: `1px solid ${colors.borderLight}`,
-              borderRadius: 6, padding: '6px 10px', marginTop: 6, marginRight: 6, fontSize: 13, color: colors.textSecondary,
-            }}>
-              <Paperclip size={14} color={colors.textTertiary} />
-              {att.name}
+          <div style={{ opacity: message.failed ? 0.5 : 1 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 2 }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: colors.textPrimary }}>{displayName}</span>
+              <span style={{
+                fontSize: 12,
+                color: message.failed ? colors.error : colors.textTertiary,
+                fontStyle: message.sending ? 'italic' : 'normal',
+                fontWeight: message.failed ? 500 : 'normal',
+              }}>
+                {message.sending
+                  ? 'Sending…'
+                  : message.failed
+                    ? 'Failed to send'
+                    : message.date ? `${message.date}, ${message.timestamp}` : message.timestamp}
+              </span>
             </div>
-          ))}
-          {message.reactions && message.reactions.length > 0 && onAction && (
-            <ReactionPills
-              reactions={message.reactions}
-              onToggle={(emoji) => onAction(`toggle-reaction:${message.id}:${emoji}`)}
-            />
+            <div style={{ fontSize: 14, color: colors.textSecondary, lineHeight: 1.5 }}>
+              {renderTextWithMentions(message.text, message.mentions)}
+            </div>
+            {/* Render all attachments, or fall back to single attachment */}
+            {(message.attachments || (message.attachment ? [message.attachment] : [])).map((att, i) => (
+              <div key={i} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: colors.surfaceAlt, border: `1px solid ${colors.borderLight}`,
+                borderRadius: 6, padding: '6px 10px', marginTop: 6, marginRight: 6, fontSize: 13, color: colors.textSecondary,
+              }}>
+                <Paperclip size={14} color={colors.textTertiary} />
+                {att.name}
+              </div>
+            ))}
+          </div>
+          {message.liked && onAction && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onAction(`toggle-like:${message.id}`); }}
+              style={{
+                marginTop: 6, marginRight: 8, padding: '6px 10px', borderRadius: 6,
+                background: colors.brandTealLight, border: `1px solid ${colors.brandTeal}`,
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                fontSize: 13, color: colors.brandTeal, cursor: 'pointer', fontWeight: 600,
+              }}
+            >
+              <ThumbsUp size={14} fill={colors.brandTeal} color={colors.brandTeal} />
+              <span>1</span>
+            </button>
           )}
           {(message.replyCount ?? 0) > 0 && onAction && (
             <button
@@ -105,23 +124,23 @@ export function ChatMessageComponent({ message, onAction, onLongPress, userName,
             >
               <MessageCircle size={14} />
               {message.replyCount} {message.replyCount === 1 ? 'reply' : 'replies'}
-              {message.lastReplyAt && <span style={{ color: colors.textTertiary, fontWeight: 400 }}> · Last reply {message.lastReplyAt}</span>}
+            </button>
+          )}
+          {message.failed && onAction && (
+            <button
+              onClick={() => onAction(`retry-send:${message.id}`)}
+              style={{
+                marginTop: 6, padding: '4px 10px', borderRadius: 6,
+                background: 'transparent', border: `1px solid ${colors.error}`,
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                fontSize: 13, color: colors.error, cursor: 'pointer', fontWeight: 600,
+              }}
+            >
+              <RefreshCw size={13} />
+              Retry
             </button>
           )}
         </div>
-        {message.failed && onAction && (
-          <button
-            onClick={() => onAction(`retry-send:${message.id}`)}
-            title="Failed to send. Tap to retry."
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: colors.error, padding: 4, marginLeft: 'auto',
-              display: 'flex', alignItems: 'center', flexShrink: 0,
-            }}
-          >
-            <AlertCircle size={18} />
-          </button>
-        )}
       </div>
     </div>
   );
