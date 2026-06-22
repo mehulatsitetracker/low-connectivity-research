@@ -26,3 +26,6 @@ _site
 
 # Vite cache
 .vite
+
+# Node v22+ compile cache
+node-compile-cache
