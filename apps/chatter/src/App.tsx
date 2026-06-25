@@ -35,7 +35,6 @@ const INITIAL_STATE: AppState = {
   messages: INITIAL_MESSAGES,
   notifications: INITIAL_NOTIFICATIONS,
   newMessageText: '',
-  chatNotifications: {},
   // New:
   replyText: '',
   network: 'online',
@@ -244,18 +243,6 @@ function App() {
           notifications: prev.notifications.map(n => n.id === notifId ? { ...n, isRead: true } : n),
         };
       });
-      return;
-    }
-
-    // Toggle chat notifications for current object
-    if (action === 'toggle-chat-notifications') {
-      setState(prev => ({
-        ...prev,
-        chatNotifications: {
-          ...prev.chatNotifications,
-          [prev.currentObjectId]: !prev.chatNotifications[prev.currentObjectId],
-        },
-      }));
       return;
     }
 
@@ -517,7 +504,6 @@ function App() {
             objectType={state.currentObjectType}
             messages={currentMessages}
             newMessageText={state.newMessageText}
-            notificationsEnabled={!!state.chatNotifications[state.currentObjectId]}
             onAction={handleAction}
             onMessageChange={(text) => setState(prev => ({ ...prev, newMessageText: text }))}
             network={state.network}

@@ -118,7 +118,6 @@ export interface AppState {
   messages: Record<string, ChatMessage[]>;
   notifications: Notification[];
   newMessageText: string;
-  chatNotifications: Record<string, boolean>; // objectId → enabled
   threadId?: string;
   replyText: string;
   network: 'online' | 'offline';

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { colors, radii } from '../theme';
+import { colors } from '../theme';
 import { ChatMessageComponent } from '../components/ChatMessage';
 import { MessageInput } from '../components/MessageInput';
 import { OfflineChat } from '../components/OfflineChat';
@@ -11,7 +11,7 @@ import { ComposerBanner } from '../components/ComposerBanner';
 import { MessageContextMenu } from '../components/MessageContextMenu';
 import { Toast } from '../components/Toast';
 import { getObjectName } from '../data/objects';
-import { ChevronLeft, Bell, BellOff, BellRing } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import type { ChatMessage, AppState } from '../types';
 
 interface ChatScreenProps {
@@ -19,7 +19,6 @@ interface ChatScreenProps {
   objectType: string;
   messages: ChatMessage[];
   newMessageText: string;
-  notificationsEnabled: boolean;
   onAction: (action: string) => void;
   onMessageChange: (text: string) => void;
   network?: 'online' | 'offline';
@@ -30,101 +29,13 @@ interface ChatScreenProps {
   userInitials?: string;
 }
 
-function NotificationModal({
-  isEnabled,
-  onConfirm,
-  onCancel,
-}: {
-  isEnabled: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <>
-      <div
-        onClick={onCancel}
-        style={{
-          position: 'absolute', inset: 0,
-          background: 'rgba(0,0,0,0.4)',
-          zIndex: 30,
-        }}
-      />
-      <div style={{
-        position: 'absolute',
-        top: '50%', left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: 300,
-        background: colors.surface,
-        borderRadius: radii.modal,
-        padding: '24px 20px',
-        zIndex: 31,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: 16 }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: '50%',
-            background: isEnabled ? '#FFF3E0' : colors.brandTealLight,
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            {isEnabled
-              ? <BellOff size={24} color="#E65100" />
-              : <Bell size={24} color={colors.brandTeal} />
-            }
-          </div>
-        </div>
-
-        <div style={{
-          fontSize: 16, fontWeight: 600, color: colors.textPrimary,
-          textAlign: 'center', marginBottom: 8,
-        }}>
-          {isEnabled ? 'Turn off notifications?' : 'Turn on notifications?'}
-        </div>
-        <div style={{
-          fontSize: 14, color: colors.textSecondary,
-          textAlign: 'center', lineHeight: 1.5, marginBottom: 20,
-        }}>
-          {isEnabled
-            ? "You'll stop receiving notifications for new messages in this conversation."
-            : "You'll get notified about all new messages in this conversation."}
-        </div>
-
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button
-            onClick={onCancel}
-            style={{
-              flex: 1, padding: '12px 0', borderRadius: radii.pill,
-              border: `1px solid ${colors.border}`, background: colors.surface,
-              fontSize: 15, fontWeight: 600, color: colors.textPrimary,
-              cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            No
-          </button>
-          <button
-            onClick={onConfirm}
-            style={{
-              flex: 1, padding: '12px 0', borderRadius: radii.pill,
-              border: 'none', background: colors.brandTeal,
-              fontSize: 15, fontWeight: 600, color: '#fff',
-              cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            Yes
-          </button>
-        </div>
-      </div>
-    </>
-  );
-}
-
 export function ChatScreen({
-  objectId, objectType, messages, newMessageText, notificationsEnabled,
+  objectId, objectType, messages, newMessageText,
   onAction, onMessageChange,
   network = 'online', loading, errorState, toast,
   userName, userInitials,
 }: ChatScreenProps) {
   const title = getObjectName(objectId, objectType);
-  const [showModal, setShowModal] = useState(false);
   const [menuForId, setMenuForId] = useState<string | null>(null);
   const topLevelMessages = messages.filter(m => !m.parentId);
 
@@ -148,18 +59,6 @@ export function ChatScreen({
       <div style={{ flex: 1, fontSize: 17, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {title}
       </div>
-      <button
-        onClick={() => setShowModal(true)}
-        style={{
-          background: 'none', border: 'none', color: '#fff', cursor: 'pointer',
-          padding: 4, display: 'flex', alignItems: 'center',
-        }}
-      >
-        {notificationsEnabled
-          ? <BellRing size={22} color="#fff" />
-          : <Bell size={22} color="#fff" />
-        }
-      </button>
     </div>
   );
 
@@ -230,16 +129,6 @@ export function ChatScreen({
           isOwn={(messages.find(m => m.id === menuForId)?.senderId) === 'current-user'}
           onClose={() => setMenuForId(null)}
           onAction={onAction}
-        />
-      )}
-      {showModal && (
-        <NotificationModal
-          isEnabled={notificationsEnabled}
-          onConfirm={() => {
-            onAction('toggle-chat-notifications');
-            setShowModal(false);
-          }}
-          onCancel={() => setShowModal(false)}
         />
       )}
       {toast && <Toast message={toast.message} tone={toast.tone} onDismiss={() => onAction('dismiss-toast')} />}
