@@ -1,6 +1,6 @@
 import { C, Icons, IconBtn, Spinner, spinKeyframes } from './_bits';
 
-export type SyncStatus = 'idle' | 'syncing' | 'error';
+export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'retrying' | 'error';
 
 export interface ErroredForm {
   id: string;
@@ -9,35 +9,89 @@ export interface ErroredForm {
 }
 
 export function SyncStatusBanner({
-  status, errorCount, onClickError,
+  status, errorCount, onClickError, onRetryNow,
 }: {
   status: SyncStatus;
   errorCount: number;
   onClickError: () => void;
+  onRetryNow?: () => void;
 }) {
   if (status === 'idle') return null;
   return (
     <>
       {spinKeyframes}
-      {status === 'syncing'
-        ? <SyncingRow />
-        : <ErrorRow count={errorCount} onClick={onClickError} />}
+      {status === 'syncing'  && <SyncingRow />}
+      {status === 'synced'   && <SyncedRow />}
+      {status === 'retrying' && <RetryingRow onRetryNow={onRetryNow} />}
+      {status === 'error'    && <ErrorRow count={errorCount} onClick={onClickError} />}
     </>
   );
 }
 
 function SyncingRow() {
   return (
-    <div style={{
-      background: C.brandTealLight, padding: '8px 14px',
-      display: 'flex', alignItems: 'center', gap: 10,
-      borderBottom: `1px solid ${C.brandTeal}33`, flexShrink: 0,
-    }}>
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        background: C.brandTealLight, padding: '8px 14px',
+        display: 'flex', alignItems: 'center', gap: 10,
+        borderBottom: `1px solid ${C.brandTeal}33`, flexShrink: 0,
+        animation: 'fi-slide-down 200ms ease-out',
+      }}>
       <Spinner size={12} color={C.brandTealDeep} />
       <div style={{ fontSize: 12, color: C.brandTealDeep, fontWeight: 600, flex: 1 }}>
         Form is syncing…
       </div>
       <div style={{ fontSize: 11, color: C.brandTealDeep, opacity: 0.7 }}>1 of 3</div>
+    </div>
+  );
+}
+
+function SyncedRow() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        background: C.completeBg, padding: '8px 14px',
+        display: 'flex', alignItems: 'center', gap: 10,
+        borderBottom: `1px solid ${C.complete}33`, flexShrink: 0,
+        animation: 'fi-slide-down 200ms ease-out',
+      }}>
+      {Icons.checkCircle(C.complete, 14)}
+      <div style={{ fontSize: 12, color: C.complete, fontWeight: 700, flex: 1 }}>
+        All changes synced
+      </div>
+    </div>
+  );
+}
+
+function RetryingRow({ onRetryNow }: { onRetryNow?: () => void }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        background: C.pendingBg, padding: '8px 14px',
+        display: 'flex', alignItems: 'center', gap: 10,
+        borderBottom: `1px solid ${C.pendingDeep}33`, flexShrink: 0,
+        animation: 'fi-slide-down 200ms ease-out',
+      }}>
+      <Spinner size={12} color={C.pendingDeep} />
+      <div style={{ fontSize: 12, color: C.pendingDeep, fontWeight: 600, flex: 1, lineHeight: 1.35 }}>
+        You're offline — will retry when you're back.
+      </div>
+      {onRetryNow && (
+        <button
+          onClick={onRetryNow}
+          style={{
+            background: 'transparent', border: `1px solid ${C.pendingDeep}55`,
+            color: C.pendingDeep, fontSize: 11, fontWeight: 700,
+            padding: '3px 8px', borderRadius: 4, fontFamily: 'inherit', cursor: 'pointer',
+          }}
+        >Retry now</button>
+      )}
     </div>
   );
 }

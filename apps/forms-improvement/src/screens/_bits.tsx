@@ -1,7 +1,117 @@
 import type React from 'react';
 import { colors } from '../theme';
+import type { NetworkStatus } from '../types';
 
 export const C = colors;
+
+export function NetworkPill({ status }: { status: NetworkStatus }) {
+  const map = {
+    online:  { bg: C.completeBg, fg: C.complete,    dot: C.complete,    label: 'Online'  },
+    offline: { bg: '#ECECEE',    fg: C.textSecondary, dot: C.textTertiary, label: 'Offline' },
+  }[status];
+  return (
+    <span
+      role="status"
+      aria-label={`Network ${map.label}`}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 5,
+        padding: '2px 8px 2px 6px', borderRadius: 999,
+        background: map.bg, color: map.fg,
+        fontSize: 10, fontWeight: 700, letterSpacing: '0.4px',
+      }}
+    >
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: map.dot }} />
+      {map.label}
+    </span>
+  );
+}
+
+export function StatusRow({
+  left, right,
+}: { left: React.ReactNode; right: React.ReactNode }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '6px 14px', background: C.surfaceAlt,
+      borderBottom: `1px solid ${C.borderLight}`, flexShrink: 0,
+      fontSize: 11, color: C.textSecondary, fontWeight: 500,
+    }}>
+      <span>{left}</span>
+      <span>{right}</span>
+    </div>
+  );
+}
+
+// Simple offline banner matching the pattern used in other prototypes
+// (see apps/connectivity/src/components/LowConnectivityBanner.tsx).
+export function OfflineBanner() {
+  return (
+    <div
+      role="status"
+      aria-label="Offline"
+      style={{
+        background: '#E0E0E0', color: '#555555',
+        padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10,
+        flexShrink: 0, fontSize: 13, fontWeight: 600,
+      }}
+    >
+      <svg width="16" height="16" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
+        <path d="M1 5.5C3.5 3 6 2 9 2C12 2 14.5 3 17 5.5"
+          stroke="#555555" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+        <path d="M4 9C5.5 7.5 7 7 9 7C11 7 12.5 7.5 14 9"
+          stroke="#555555" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
+        <path d="M6.5 12C7.2 11.5 8 11.3 9 11.3C10 11.3 10.8 11.5 11.5 12"
+          stroke="#555555" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="9" cy="15" r="0.9" fill="#555555" />
+        <path d="M2 2L16 16" stroke="#555555" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+      <span>Offline</span>
+    </div>
+  );
+}
+
+// Slim full-width amber banner shown at the top of a screen when some fields
+// failed to sync and are retrying. Sibling of OfflineBanner — same shape.
+export function RetryBanner({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={`${count} item${count === 1 ? '' : 's'} retrying`}
+      style={{
+        background: C.pendingBg, color: C.pendingDeep,
+        padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10,
+        flexShrink: 0, fontSize: 13, fontWeight: 600,
+        borderBottom: `1px solid ${C.pendingDeep}22`,
+        animation: 'fi-slide-down 200ms ease-out',
+      }}
+    >
+      <Spinner size={12} color={C.pendingDeep} />
+      <span>{count} item{count === 1 ? '' : 's'} retrying</span>
+    </div>
+  );
+}
+
+// Compact inline chip used inside section headers/ToC rollups.
+export function RetryChip({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      role="status"
+      aria-label={`${count} item${count === 1 ? '' : 's'} retrying`}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 5,
+        padding: '2px 8px', borderRadius: 999,
+        background: C.pendingBg, color: C.pendingDeep,
+        fontSize: 10, fontWeight: 700, letterSpacing: '0.4px',
+      }}
+    >
+      <Spinner size={9} color={C.pendingDeep} />
+      {count} retrying
+    </span>
+  );
+}
 
 export function TopBar({
   title, trailing, onBack, dark = true,
@@ -300,5 +410,30 @@ export function SecondaryButton({ children, onClick }: { children: React.ReactNo
 }
 
 export const spinKeyframes = (
-  <style>{`@keyframes fi-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } @keyframes fi-shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }`}</style>
+  <style>{`
+    @keyframes fi-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes fi-shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+    @keyframes fi-flash { 0% { box-shadow: 0 0 0 4px rgba(180,114,16,0.55); } 100% { box-shadow: 0 0 0 4px rgba(180,114,16,0); } }
+    @keyframes fi-slide-down { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  `}</style>
 );
+
+export function Toast({
+  tone = 'green', children,
+}: { tone?: 'green' | 'amber'; children: React.ReactNode }) {
+  const map = {
+    green: { bg: C.completeBg, fg: C.complete,    border: `${C.complete}33` },
+    amber: { bg: C.pendingBg,  fg: C.pendingDeep, border: `${C.pendingDeep}33` },
+  }[tone];
+  return (
+    <div style={{
+      background: map.bg, color: map.fg,
+      borderBottom: `1px solid ${map.border}`,
+      padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 8,
+      fontSize: 12, fontWeight: 600, flexShrink: 0,
+      animation: 'fi-slide-down 200ms ease-out',
+    }}>
+      {children}
+    </div>
+  );
+}

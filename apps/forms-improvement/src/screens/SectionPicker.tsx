@@ -50,7 +50,8 @@ const TOC: ToCSectionDef[] = [
   },
 ];
 
-function toneFor(key: string, fields: FieldsMap): Tone {
+function toneFor(key: string, fields: FieldsMap, retryingKeys: Set<string>): Tone {
+  if (retryingKeys.has(key)) return 'amber';
   // Demo: a 'no' on Emergency stop is treated as a blocking error.
   if (key === 's3-emergency' && fields[key] === 'no') return 'red';
   return isComplete(key, fields) ? 'green' : 'amber';
@@ -61,11 +62,17 @@ interface Props {
   currentSection: SectionIndex;
   fields: FieldsMap;
   savingKeys: Set<string>;
+  retryingKeys?: Set<string>;
   onClose: () => void;
-  onJump: (i: SectionIndex) => void;
+  onJump: (i: SectionIndex, fieldKey?: string) => void;
+  onFieldRetry?: (key: string) => void;
 }
 
-export function SectionPicker({ variant, currentSection, fields, savingKeys, onClose, onJump }: Props) {
+export function SectionPicker({
+  variant, currentSection, fields, savingKeys,
+  retryingKeys = new Set(),
+  onClose, onJump, onFieldRetry,
+}: Props) {
   const isImproved = variant === 'improved';
   const noop = () => {};
 
@@ -81,6 +88,7 @@ export function SectionPicker({ variant, currentSection, fields, savingKeys, onC
           sectionIndex={currentSection}
           fields={fields}
           savingKeys={savingKeys}
+          retryingKeys={retryingKeys}
           setField={noop}
           onBack={noop}
           onNext={noop}
@@ -103,7 +111,7 @@ export function SectionPicker({ variant, currentSection, fields, savingKeys, onC
         zIndex: 2, display: 'flex', flexDirection: 'column',
       }}>
         {isImproved
-          ? <ToCSheet fields={fields} onClose={onClose} onJump={onJump} />
+          ? <ToCSheet fields={fields} retryingKeys={retryingKeys} onClose={onClose} onJump={onJump} onFieldRetry={onFieldRetry} />
           : <FlatSheet currentSection={currentSection} onClose={onClose} onJump={onJump} />}
       </div>
     </div>
@@ -126,7 +134,7 @@ function FlatSheet({
         padding: '12px 16px', display: 'flex', justifyContent: 'flex-end',
         borderBottom: `1px solid ${C.borderLight}`,
       }}>
-        <IconBtn onClick={onClose}>{Icons.close()}</IconBtn>
+        <IconBtn onClick={onClose} title="Close">{Icons.close()}</IconBtn>
       </div>
       {sections.map((name, i) => (
         <button
@@ -151,11 +159,14 @@ function FlatSheet({
 
 // ---------- ToC sheet (improved variant) ----------
 export function ToCSheet({
-  fields, onClose, onJump,
+  fields, retryingKeys = new Set<string>(),
+  onClose, onJump, onFieldRetry,
 }: {
   fields: FieldsMap;
+  retryingKeys?: Set<string>;
   onClose: () => void;
-  onJump: (i: SectionIndex) => void;
+  onJump: (i: SectionIndex, fieldKey?: string) => void;
+  onFieldRetry?: (key: string) => void;
 }) {
   return (
     <div style={{
@@ -170,12 +181,19 @@ export function ToCSheet({
           <div style={{ fontSize: 15, fontWeight: 700, color: C.textPrimary }}>Table of Contents</div>
           <div style={{ fontSize: 11, color: C.textSecondary, marginTop: 2 }}>Tap any item to jump to it</div>
         </div>
-        <IconBtn onClick={onClose}>{Icons.close()}</IconBtn>
+        <IconBtn onClick={onClose} title="Close">{Icons.close()}</IconBtn>
       </div>
 
       <div style={{ overflowY: 'auto', minHeight: 0, padding: '4px 0' }}>
         {TOC.map((s, i) => (
-          <ToCSectionRow key={s.name} section={s} fields={fields} onJump={() => onJump(i as SectionIndex)} />
+          <ToCSectionRow
+            key={s.name}
+            section={s}
+            fields={fields}
+            retryingKeys={retryingKeys}
+            onJump={(key) => onJump(i as SectionIndex, key)}
+            onFieldRetry={onFieldRetry}
+          />
         ))}
       </div>
 
@@ -193,13 +211,15 @@ export function ToCSheet({
 }
 
 function ToCSectionRow({
-  section, fields, onJump,
+  section, fields, retryingKeys, onJump, onFieldRetry,
 }: {
   section: ToCSectionDef;
   fields: FieldsMap;
-  onJump: () => void;
+  retryingKeys: Set<string>;
+  onJump: (fieldKey: string) => void;
+  onFieldRetry?: (key: string) => void;
 }) {
-  const tones = section.entries.map(e => toneFor(e.key, fields));
+  const tones = section.entries.map(e => toneFor(e.key, fields, retryingKeys));
   const rollup: Tone = tones.includes('red') ? 'red' : tones.includes('amber') ? 'amber' : 'green';
   const totals = {
     done: tones.filter(t => t === 'green').length,
@@ -221,11 +241,12 @@ function ToCSectionRow({
         <span style={{ fontSize: 11, color: C.textSecondary }}>{totals.done}/{totals.total}</span>
       </div>
       {section.entries.map((e, i) => {
-        const tone = toneFor(e.key, fields);
+        const tone = toneFor(e.key, fields, retryingKeys);
+        const retrying = retryingKeys.has(e.key);
         return (
           <button
             key={i}
-            onClick={onJump}
+            onClick={() => onJump(e.key)}
             style={{
               width: '100%', textAlign: 'left',
               padding: '11px 16px 11px 32px', display: 'flex', alignItems: 'center', gap: 10,
@@ -244,8 +265,29 @@ function ToCSectionRow({
                   padding: '1px 6px', borderRadius: 3, letterSpacing: '0.4px',
                 }}>WARNING</span>
               )}
+              {retrying && (
+                <span style={{
+                  marginLeft: 8, fontSize: 10, fontWeight: 700,
+                  color: C.pendingDeep, background: C.pendingBg,
+                  padding: '1px 6px', borderRadius: 3, letterSpacing: '0.4px',
+                }}>RETRYING</span>
+              )}
             </div>
-            {Icons.chevronRight(C.textTertiary, 14)}
+            {retrying && onFieldRetry ? (
+              <span
+                role="button"
+                tabIndex={0}
+                aria-label={`Retry ${e.text}`}
+                onClick={(ev) => { ev.stopPropagation(); onFieldRetry(e.key); }}
+                style={{
+                  padding: '4px 10px', background: C.pendingDeep, color: '#fff',
+                  border: 'none', borderRadius: 4, fontSize: 11, fontWeight: 700,
+                  fontFamily: 'inherit', cursor: 'pointer',
+                }}
+              >Retry</span>
+            ) : (
+              Icons.chevronRight(C.textTertiary, 14)
+            )}
           </button>
         );
       })}

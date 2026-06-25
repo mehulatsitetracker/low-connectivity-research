@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Variant } from '../types';
+import type { Variant, NetworkStatus } from '../types';
 import { C, TopBar, Pill, Icons, IconBtn, spinKeyframes } from './_bits';
 import type { SectionIndex, FieldsMap } from './Section';
 import { sectionCounts } from './Section';
@@ -19,20 +19,28 @@ interface Props {
   missingCount: number;
   fields: FieldsMap;
   savingKeys: Set<string>;
+  retryingKeys?: Set<string>;
+  networkStatus: NetworkStatus;
   openToCRequest?: number;
   onBack: () => void;
-  onOpenSection: (i: SectionIndex) => void;
+  onOpenSection: (i: SectionIndex, fieldKey?: string) => void;
+  onFieldRetry?: (key: string) => void;
 }
 
 export function FormDetail({
-  variant, submitted, submitError, missingCount, fields, savingKeys, openToCRequest = 0,
-  onBack, onOpenSection,
+  variant, submitted, submitError, missingCount, fields, savingKeys,
+  retryingKeys = new Set(),
+  networkStatus, openToCRequest = 0,
+  onBack, onOpenSection, onFieldRetry,
 }: Props) {
   const isImproved = variant === 'improved';
   const [tocOpen, setTocOpen] = useState(false);
   const openToC = () => setTocOpen(true);
   const closeToC = () => setTocOpen(false);
-  const jumpFromToC = (i: SectionIndex) => { setTocOpen(false); onOpenSection(i); };
+  const jumpFromToC = (i: SectionIndex, fieldKey?: string) => {
+    setTocOpen(false);
+    onOpenSection(i, fieldKey);
+  };
 
   // External nudge — open the ToC only when openToCRequest changes during this
   // mount, not on a fresh remount with the same persisted value.
@@ -59,6 +67,13 @@ export function FormDetail({
   const userFilledAny = Object.keys(fields).length > 0;
   const inProgress = userFilledAny || submitted;
 
+  const changedCount = Object.keys(fields).length;
+  // Draft pill only shows when there are user-modified fields AND the form
+  // hasn't been submitted yet. Post-submit (syncing/synced/error) the draft
+  // is no longer just-on-device, so the indicator goes away.
+  const showDraftPill = isImproved && changedCount > 0 && !submitted;
+  const isOffline = networkStatus === 'offline';
+
   return (
     <div style={{ flex: 1, minHeight: 0, position: 'relative', display: 'flex', flexDirection: 'column', background: C.background }}>
       {spinKeyframes}
@@ -66,7 +81,7 @@ export function FormDetail({
         title=""
         dark={false}
         onBack={onBack}
-        trailing={<IconBtn>{Icons.more()}</IconBtn>}
+        trailing={<IconBtn title="More">{Icons.more()}</IconBtn>}
       />
 
       <div style={{ padding: '16px 16px 10px', background: C.surface, borderBottom: `1px solid ${C.borderLight}`, flexShrink: 0 }}>
@@ -74,9 +89,16 @@ export function FormDetail({
           Site Check-Out Form from Template ID:<br />a0gf6000000ZOUMAA4
         </div>
         <div style={{ fontSize: 13, color: C.textSecondary, marginBottom: 8 }}>WeWork Prestige Central</div>
-        <Pill tone={inProgress ? 'amber' : 'gray'}>
-          {inProgress ? 'In progress' : 'Not started'}
-        </Pill>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <Pill tone={inProgress ? 'amber' : 'gray'}>
+            {inProgress ? 'In progress' : 'Not started'}
+          </Pill>
+          {showDraftPill && (
+            isOffline
+              ? <SavedWaitingChip />
+              : <DraftChip count={changedCount} />
+          )}
+        </div>
       </div>
 
       {isImproved && (
@@ -135,11 +157,57 @@ export function FormDetail({
             style={{ position: 'absolute', inset: 0, background: C.overlay, zIndex: 10, cursor: 'pointer' }}
           />
           <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 11, display: 'flex', flexDirection: 'column' }}>
-            <ToCSheet fields={fields} onClose={closeToC} onJump={jumpFromToC} />
+            <ToCSheet
+              fields={fields}
+              retryingKeys={retryingKeys}
+              onClose={closeToC}
+              onJump={jumpFromToC}
+              onFieldRetry={onFieldRetry}
+            />
           </div>
         </>
       )}
     </div>
+  );
+}
+
+function DraftChip({ count }: { count: number }) {
+  return (
+    <span
+      aria-label={`Draft kept on device with ${count} change${count === 1 ? '' : 's'}`}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '2px 8px', borderRadius: 4,
+        background: C.brandTealLight, color: C.brandTealDeep,
+        fontSize: 10, fontWeight: 700, letterSpacing: '0.4px',
+        textTransform: 'uppercase',
+      }}
+    >
+      <span style={{
+        width: 6, height: 6, borderRadius: '50%', background: C.brandTealDeep,
+      }} />
+      Draft · {count} change{count === 1 ? '' : 's'}
+    </span>
+  );
+}
+
+function SavedWaitingChip() {
+  return (
+    <span
+      aria-label="Changes saved locally — waiting for connection to sync"
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '2px 8px', borderRadius: 4,
+        background: '#ECECEE', color: C.textSecondary,
+        fontSize: 10, fontWeight: 700, letterSpacing: '0.4px',
+        textTransform: 'uppercase',
+      }}
+    >
+      <span style={{
+        width: 6, height: 6, borderRadius: '50%', background: C.textTertiary,
+      }} />
+      Saved · Will sync when online
+    </span>
   );
 }
 

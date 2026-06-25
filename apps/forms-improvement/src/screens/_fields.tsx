@@ -98,14 +98,23 @@ export function ConfirmationToggleField({
 }
 
 export function PhotoField({
-  label, state, minRequired = 1, onAdd,
-}: { label: string; state: FieldState; minRequired?: number; onAdd?: () => void }) {
+  label, state, minRequired = 1, retrying = false, onAdd, onRetry,
+}: {
+  label: string; state: FieldState; minRequired?: number;
+  retrying?: boolean; onAdd?: () => void; onRetry?: () => void;
+}) {
   const trailing = Icons.info();
-  const status = state === 'required' ? `Minimum Upload (${minRequired}) required` : undefined;
+  const statusBase = state === 'required' ? `Minimum Upload (${minRequired}) required` : undefined;
+  const status = retrying ? 'Upload retrying…' : statusBase;
 
   return (
-    <FieldCard label={label} state={state} statusOverride={status} trailing={trailing}>
-      {state === 'complete' ? (
+    <FieldCard
+      label={label}
+      state={retrying ? 'saving' : state}
+      statusOverride={status}
+      trailing={trailing}
+    >
+      {state === 'complete' && !retrying && (
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <AddTile onClick={onAdd} />
           <div style={{ flex: 1 }} />
@@ -119,7 +128,38 @@ export function PhotoField({
           </div>
           <CountBadge count={1} />
         </div>
-      ) : (
+      )}
+      {state === 'complete' && retrying && (
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 6, overflow: 'hidden',
+            border: `1.5px dashed ${C.pendingDeep}`,
+            background: 'linear-gradient(135deg, #5C6770 0%, #3E4750 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
+          }}>
+            {Icons.photo('#fff', 24)}
+            <div style={{
+              position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Spinner size={16} color="#fff" />
+            </div>
+          </div>
+          <div style={{ flex: 1, fontSize: 12, color: C.pendingDeep, fontWeight: 600 }}>
+            1 photo failed to upload
+          </div>
+          <button
+            onClick={onRetry}
+            aria-label="Retry photo upload"
+            style={{
+              padding: '6px 12px', background: C.pendingDeep, color: '#fff',
+              border: 'none', borderRadius: 4, fontSize: 12, fontWeight: 700,
+              fontFamily: 'inherit', cursor: 'pointer',
+            }}
+          >Retry</button>
+        </div>
+      )}
+      {state !== 'complete' && (
         <button
           onClick={onAdd}
           style={{

@@ -19,6 +19,24 @@ export interface ScreenDef {
 
 export const VARIANTS: Variant[] = ['now', 'improved'];
 
+// Edge-case triggers — all default OFF so the happy flow shows by default.
+// Mirrors the adhoc-job SimulatorControls pattern.
+export interface EdgeCases {
+  offline: boolean;        // network pill flips to Offline; sync stalls in Retrying
+  syncError: boolean;      // post-submit banner ends in Action needed + s3-emergency rejected
+  photoRetry: boolean;     // "1 photo retrying" chip in form header + Retry in ToC
+  relaunchStates: boolean; // Resume your draft? card + Session expired interception
+}
+
+export const DEFAULT_EDGE_CASES: EdgeCases = {
+  offline: false,
+  syncError: false,
+  photoRetry: false,
+  relaunchStates: false,
+};
+
+export type NetworkStatus = 'online' | 'offline';
+
 export const SCREENS: ScreenDef[] = [
   { id: 'forms-list-loading', name: 'Forms list — loading',         scenarios: VARIANTS },
   { id: 'forms-list',         name: 'Forms list — populated',        scenarios: VARIANTS },
