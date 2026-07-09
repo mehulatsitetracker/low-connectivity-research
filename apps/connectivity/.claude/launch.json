@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "prototype",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "name": "hub (all apps)",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["../../dev-server.mjs"],
       "port": 5173
     }
   ]

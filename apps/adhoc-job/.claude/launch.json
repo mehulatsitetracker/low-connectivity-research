@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "dev",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["vite", "--port", "5174"],
-      "port": 5174
+      "name": "hub (all apps)",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["../../dev-server.mjs"],
+      "port": 5173
     }
   ]
 }

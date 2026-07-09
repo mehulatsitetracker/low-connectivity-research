@@ -2,34 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "connectivity",
+      "name": "hub (all apps)",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "-w", "apps/connectivity"],
+      "runtimeArgs": ["run", "dev"],
       "port": 5173
-    },
-    {
-      "name": "auth-messages",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "-w", "apps/auth-messages", "--", "--port", "5174"],
-      "port": 5174
-    },
-    {
-      "name": "adhoc-job",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "-w", "apps/adhoc-job", "--", "--port", "5175"],
-      "port": 5175
-    },
-    {
-      "name": "chatter",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "-w", "apps/chatter", "--", "--port", "5176"],
-      "port": 5176
-    },
-    {
-      "name": "forms-improvement",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "-w", "apps/forms-improvement", "--", "--port", "5177"],
-      "port": 5177
     }
   ]
 }

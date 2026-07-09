@@ -2,10 +2,16 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "forms-improvement",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--port", "5177"],
-      "port": 5177
+      "name": "hub (all apps)",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["../../dev-server.mjs"],
+      "port": 5173
+    },
+    {
+      "name": "forms-improvement (standalone)",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["../../node_modules/.bin/vite", "--port", "5178", "--host"],
+      "port": 5178
     }
   ]
 }
