@@ -29,3 +29,6 @@ _site
 
 # Node v22+ compile cache
 node-compile-cache
+
+# Playwright MCP test artifacts
+.playwright-mcp/

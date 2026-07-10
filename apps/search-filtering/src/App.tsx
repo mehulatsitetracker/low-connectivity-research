@@ -4,9 +4,8 @@ import { MobileFrame } from './components/MobileFrame';
 import { useConfiguratorConfig } from './hooks/useConfiguratorConfig';
 import { HomeScreen } from './screens/HomeScreen';
 import { MenuScreen } from './screens/MenuScreen';
-import { AllJobsScreen } from './screens/AllJobsScreen';
-import { AllSitesScreen } from './screens/AllSitesScreen';
-import { AllProjectsScreen } from './screens/AllProjectsScreen';
+import { ObjectListScreen } from './screens/ObjectListScreen';
+import { JOBS_CONFIG, SITES_CONFIG, PROJECTS_CONFIG } from './config/listConfigs';
 import { SCREENS } from './types';
 import type { AppState, ScreenId, ActiveTab } from './types';
 
@@ -84,12 +83,14 @@ function App() {
         return <HomeScreen activeTab={state.activeTab} onAction={handleAction} />;
       case 'menu':
         return <MenuScreen activeTab={state.activeTab} onAction={handleAction} />;
+      // key forces a remount per object type so per-screen state (filters,
+      // search, saved filters) never leaks when switching list screens directly.
       case 'all-jobs':
-        return <AllJobsScreen activeTab={state.activeTab} onAction={handleAction} />;
+        return <ObjectListScreen key="all-jobs" config={JOBS_CONFIG} activeTab={state.activeTab} onAction={handleAction} />;
       case 'all-sites':
-        return <AllSitesScreen activeTab={state.activeTab} onAction={handleAction} />;
+        return <ObjectListScreen key="all-sites" config={SITES_CONFIG} activeTab={state.activeTab} onAction={handleAction} />;
       case 'all-projects':
-        return <AllProjectsScreen activeTab={state.activeTab} onAction={handleAction} />;
+        return <ObjectListScreen key="all-projects" config={PROJECTS_CONFIG} activeTab={state.activeTab} onAction={handleAction} />;
       default:
         return <HomeScreen activeTab={state.activeTab} onAction={handleAction} />;
     }

@@ -3,46 +3,46 @@ import { Star } from 'lucide-react';
 import { colors } from '../theme';
 import { TopBar } from '../components/TopBar';
 import { SearchBar } from '../components/SearchBar';
-import { JobsSearchHistoryPanel } from '../components/JobsSearchHistoryPanel';
+import { SearchHistoryPanel } from '../components/SearchHistoryPanel';
 import { ActiveFilterChips } from '../components/ActiveFilterChips';
-import { JobFilterSuggestionBar } from '../components/JobFilterSuggestionBar';
-import { JobsFilterBottomSheet } from '../components/JobsFilterBottomSheet';
+import { FilterSuggestionBar } from '../components/FilterSuggestionBar';
+import { FilterBottomSheet } from '../components/FilterBottomSheet';
 import { SaveFilterModal } from '../components/SaveFilterModal';
 import { SavedFilterActionsMenu } from '../components/SavedFilterActionsMenu';
 import { ObjectCard } from '../components/ObjectCard';
 import { BottomNav } from '../components/BottomNav';
-import { JOBS } from '../data/objects';
 import {
-  applyJobFilterSuggestion,
-  buildJobListFilterChips,
-  countJobListFilters,
-  filterJobs,
-  inferJobFilterSuggestions,
-  removeJobListFilterChip,
-  searchJobs,
-} from '../utils/jobFilters';
+  applyFilterSuggestion,
+  buildFilterChips,
+  cloneFilters,
+  countFilters,
+  emptyFilters,
+  filterItems,
+  inferFilterSuggestions,
+  removeFilterChip,
+  searchItems,
+} from '../utils/listEngine';
 import {
-  loadJobRecentSearches,
-  pushJobRecentSearch,
-  saveJobRecentSearches,
-} from '../utils/jobRecentSearches';
+  loadRecentSearches,
+  pushRecentSearch,
+  saveRecentSearches,
+} from '../utils/recentSearches';
 import {
-  loadJobRecentlyViewed,
-  recordJobView,
-  resolveRecentlyViewedJobs,
-  saveJobRecentlyViewed,
-} from '../utils/jobRecentlyViewed';
+  loadRecentlyViewed,
+  recordView,
+  resolveRecentlyViewed,
+  saveRecentlyViewed,
+} from '../utils/recentlyViewed';
 import {
-  cloneJobListFilters,
-  createSavedJobFilter,
-  loadJobSavedFilters,
-  saveJobSavedFilters,
-} from '../utils/jobSavedFilters';
-import { DEFAULT_JOB_LIST_FILTERS } from '../types';
-import type { ActiveTab, JobListFilters } from '../types';
-import type { JobFilterSuggestion } from '../utils/jobFilters';
+  createSavedFilter,
+  loadSavedFilters,
+  saveSavedFilters,
+} from '../utils/savedFilters';
+import type { ActiveTab, FilterSuggestion, FilterValues } from '../types';
+import type { ListConfig } from '../config/listConfigs';
 
-interface AllJobsScreenProps {
+interface ObjectListScreenProps<T> {
+  config: ListConfig<T>;
   activeTab: ActiveTab;
   onAction: (action: string) => void;
 }
@@ -56,14 +56,14 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
-export function AllJobsScreen({ activeTab, onAction }: AllJobsScreenProps) {
-  const [filters, setFilters] = useState<JobListFilters>(DEFAULT_JOB_LIST_FILTERS);
+export function ObjectListScreen<T>({ config, activeTab, onAction }: ObjectListScreenProps<T>) {
+  const [filters, setFilters] = useState<FilterValues>(() => emptyFilters(config));
   const [sheetOpen, setSheetOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
-  const [recentSearches, setRecentSearches] = useState(loadJobRecentSearches);
-  const [recentlyViewed, setRecentlyViewed] = useState(loadJobRecentlyViewed);
-  const [savedFilters, setSavedFilters] = useState(loadJobSavedFilters);
+  const [recentSearches, setRecentSearches] = useState(() => loadRecentSearches(config));
+  const [recentlyViewed, setRecentlyViewed] = useState(() => loadRecentlyViewed(config.storagePrefix));
+  const [savedFilters, setSavedFilters] = useState(() => loadSavedFilters(config.storagePrefix));
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [saveModalInitialName, setSaveModalInitialName] = useState('');
   const [saveModalMode, setSaveModalMode] = useState<'create' | 'rename'>('create');
@@ -72,76 +72,67 @@ export function AllJobsScreen({ activeTab, onAction }: AllJobsScreenProps) {
   const searchAreaRef = useRef<HTMLDivElement>(null);
 
   const debouncedQuery = useDebounce(query, 200);
-  const activeFilterCount = countJobListFilters(filters);
-  const activeChips = useMemo(() => buildJobListFilterChips(filters), [filters]);
-  const visibleJobs = useMemo(() => {
-    const filtered = filterJobs(JOBS, filters);
-    return searchJobs(filtered, debouncedQuery);
-  }, [filters, debouncedQuery]);
+  const activeFilterCount = countFilters(config, filters);
+  const activeChips = useMemo(() => buildFilterChips(config, filters), [config, filters]);
+  const visibleItems = useMemo(() => {
+    const filtered = filterItems(config, config.items, filters);
+    return searchItems(config, filtered, debouncedQuery);
+  }, [config, filters, debouncedQuery]);
   const filterSuggestions = useMemo(
-    () => inferJobFilterSuggestions(JOBS, debouncedQuery, filters),
-    [debouncedQuery, filters],
+    () => inferFilterSuggestions(config, config.items, debouncedQuery, filters),
+    [config, debouncedQuery, filters],
   );
   const resolvedRecentlyViewed = useMemo(
-    () => resolveRecentlyViewedJobs(recentlyViewed),
-    [recentlyViewed],
+    () => resolveRecentlyViewed(config, recentlyViewed),
+    [config, recentlyViewed],
   );
 
   const showSearchHistory = searchFocused && query.length === 0;
   const isTyping = query.length > 0;
 
   useEffect(() => {
-    saveJobRecentSearches(recentSearches);
-  }, [recentSearches]);
+    saveRecentSearches(config.storagePrefix, recentSearches);
+  }, [config.storagePrefix, recentSearches]);
 
   useEffect(() => {
-    saveJobRecentlyViewed(recentlyViewed);
-  }, [recentlyViewed]);
+    saveRecentlyViewed(config.storagePrefix, recentlyViewed);
+  }, [config.storagePrefix, recentlyViewed]);
 
   useEffect(() => {
-    saveJobSavedFilters(savedFilters);
-  }, [savedFilters]);
+    saveSavedFilters(config.storagePrefix, savedFilters);
+  }, [config.storagePrefix, savedFilters]);
 
   const handleRemoveChip = useCallback((chipId: string) => {
-    setFilters(prev => removeJobListFilterChip(chipId, prev));
+    setFilters(prev => removeFilterChip(chipId, prev));
   }, []);
 
-  const handleJobOpen = useCallback((jobId: string) => {
-    setRecentlyViewed(prev => recordJobView(prev, jobId));
-    onAction(`select-job:${jobId}`);
-  }, [onAction]);
+  const handleItemOpen = useCallback((id: string) => {
+    setRecentlyViewed(prev => recordView(prev, id));
+    onAction(`select-${config.type}:${id}`);
+  }, [config.type, onAction]);
 
-  const handleSearchFocus = useCallback(() => {
-    setSearchFocused(true);
-  }, []);
+  const handleSearchFocus = useCallback(() => setSearchFocused(true), []);
 
   const handleSearchBlur = useCallback((e: React.FocusEvent) => {
     const next = e.relatedTarget as Node | null;
     if (next && searchAreaRef.current?.contains(next)) return;
-
     setSearchFocused(false);
     const trimmed = query.trim();
-    if (trimmed) {
-      setRecentSearches(prev => pushJobRecentSearch(prev, trimmed));
-    }
+    if (trimmed) setRecentSearches(prev => pushRecentSearch(prev, trimmed));
   }, [query]);
 
   const handleRecentSelect = useCallback((term: string) => {
     setQuery(term);
-    setRecentSearches(prev => pushJobRecentSearch(prev, term));
+    setRecentSearches(prev => pushRecentSearch(prev, term));
     setSearchFocused(true);
   }, []);
 
-  const handleClearRecentSearches = useCallback(() => {
-    setRecentSearches([]);
-  }, []);
+  const handleClearRecentSearches = useCallback(() => setRecentSearches([]), []);
 
-  const handleQueryChange = useCallback((value: string) => {
-    setQuery(value);
-  }, []);
+  const handleQueryChange = useCallback((value: string) => setQuery(value), []);
 
-  const handleApplyFilterSuggestion = useCallback((suggestion: JobFilterSuggestion) => {
-    setFilters(prev => applyJobFilterSuggestion(prev, suggestion));
+  const handleApplyFilterSuggestion = useCallback((suggestion: FilterSuggestion) => {
+    setFilters(prev => applyFilterSuggestion(prev, suggestion));
     setQuery('');
   }, []);
 
@@ -154,12 +145,10 @@ export function AllJobsScreen({ activeTab, onAction }: AllJobsScreenProps) {
   const handleSaveFilter = useCallback((name: string) => {
     if (saveModalMode === 'rename' && editingFilterId) {
       setSavedFilters(prev => prev.map(item => (
-        item.id === editingFilterId
-          ? { ...item, name, updatedAt: Date.now() }
-          : item
+        item.id === editingFilterId ? { ...item, name, updatedAt: Date.now() } : item
       )));
     } else {
-      setSavedFilters(prev => [createSavedJobFilter(name, filters), ...prev]);
+      setSavedFilters(prev => [createSavedFilter(name, filters), ...prev]);
     }
     setSaveModalOpen(false);
     setEditingFilterId(null);
@@ -168,13 +157,11 @@ export function AllJobsScreen({ activeTab, onAction }: AllJobsScreenProps) {
   const handleSavedFilterSelect = useCallback((id: string) => {
     const saved = savedFilters.find(item => item.id === id);
     if (!saved) return;
-    setFilters(cloneJobListFilters(saved.filters));
+    setFilters(cloneFilters(saved.filters));
     setSearchFocused(false);
   }, [savedFilters]);
 
-  const handleSavedFilterMenu = useCallback((id: string) => {
-    setActionsMenuFilterId(id);
-  }, []);
+  const handleSavedFilterMenu = useCallback((id: string) => setActionsMenuFilterId(id), []);
 
   const handleRenameSavedFilter = useCallback(() => {
     if (!actionsMenuFilterId) return;
@@ -191,7 +178,7 @@ export function AllJobsScreen({ activeTab, onAction }: AllJobsScreenProps) {
     if (!actionsMenuFilterId || activeFilterCount === 0) return;
     setSavedFilters(prev => prev.map(item => (
       item.id === actionsMenuFilterId
-        ? { ...item, filters: cloneJobListFilters(filters), updatedAt: Date.now() }
+        ? { ...item, filters: cloneFilters(filters), updatedAt: Date.now() }
         : item
     )));
     setActionsMenuFilterId(null);
@@ -208,11 +195,11 @@ export function AllJobsScreen({ activeTab, onAction }: AllJobsScreenProps) {
       flex: 1, display: 'flex', flexDirection: 'column',
       background: colors.background, position: 'relative', overflow: 'hidden',
     }}>
-      <TopBar title="All Jobs" onBack={() => onAction('back')} showDropdown showPlus />
+      <TopBar title={config.title} onBack={() => onAction('back')} showDropdown showPlus />
       <div style={{ flex: 1, overflowY: 'auto' }}>
         <div ref={searchAreaRef} onBlur={handleSearchBlur}>
           <SearchBar
-            placeholder="Search jobs"
+            placeholder={config.searchPlaceholder}
             query={query}
             onQueryChange={handleQueryChange}
             onFocus={handleSearchFocus}
@@ -222,7 +209,8 @@ export function AllJobsScreen({ activeTab, onAction }: AllJobsScreenProps) {
           />
           {showSearchHistory && (
             <div style={{ marginTop: 12 }}>
-              <JobsSearchHistoryPanel
+              <SearchHistoryPanel
+                config={config}
                 savedFilters={savedFilters}
                 recentSearches={recentSearches}
                 recentlyViewed={resolvedRecentlyViewed}
@@ -230,14 +218,14 @@ export function AllJobsScreen({ activeTab, onAction }: AllJobsScreenProps) {
                 onSavedFilterMenu={handleSavedFilterMenu}
                 onRecentSearchSelect={handleRecentSelect}
                 onClearRecentSearches={handleClearRecentSearches}
-                onRecentlyViewedSelect={handleJobOpen}
+                onRecentlyViewedSelect={handleItemOpen}
               />
             </div>
           )}
         </div>
 
         {!showSearchHistory && isTyping && (
-          <JobFilterSuggestionBar
+          <FilterSuggestionBar
             suggestions={filterSuggestions}
             highlightQuery={debouncedQuery}
             onApply={handleApplyFilterSuggestion}
@@ -251,17 +239,9 @@ export function AllJobsScreen({ activeTab, onAction }: AllJobsScreenProps) {
             type="button"
             onClick={handleOpenSaveModal}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-              margin: '4px 16px 0',
-              padding: '5px 0',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: 12,
-              fontWeight: 500,
-              color: colors.textSecondary,
+              display: 'flex', alignItems: 'center', gap: 5, margin: '4px 16px 0',
+              padding: '5px 0', background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 12, fontWeight: 500, color: colors.textSecondary,
             }}
           >
             <Star size={12} color={colors.brandTeal} fill={colors.brandTeal} />
@@ -273,31 +253,35 @@ export function AllJobsScreen({ activeTab, onAction }: AllJobsScreenProps) {
           <div
             className={isTyping ? 'search-panel-view search-panel-view--visible' : undefined}
             style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 8,
+              display: 'flex', flexDirection: 'column', gap: 8,
               padding: activeChips.length > 0 ? '12px 16px 16px' : '0 16px 16px',
             }}
           >
-            {visibleJobs.map(job => (
-              <ObjectCard
-                key={job.id}
-                title={job.id}
-                meta={[
-                  { label: 'Job Template', value: job.templateName },
-                  { label: 'Site', value: job.siteName },
-                  { label: 'Status', value: job.status },
-                ]}
-                onClick={() => handleJobOpen(job.id)}
-                highlightQuery={debouncedQuery}
-              />
-            ))}
+            {visibleItems.length === 0 ? (
+              <div style={{ padding: '32px 16px', textAlign: 'center', fontSize: 14, color: colors.textTertiary }}>
+                No {config.nounPlural} match your search.
+              </div>
+            ) : (
+              visibleItems.map(item => {
+                const id = config.getId(item);
+                return (
+                  <ObjectCard
+                    key={id}
+                    title={config.getCardTitle(item)}
+                    meta={config.getCardMeta(item)}
+                    onClick={() => handleItemOpen(id)}
+                    highlightQuery={debouncedQuery}
+                  />
+                );
+              })
+            )}
           </div>
         )}
       </div>
 
-      <JobsFilterBottomSheet
+      <FilterBottomSheet
         open={sheetOpen}
+        config={config}
         filters={filters}
         onChange={setFilters}
         onClose={() => setSheetOpen(false)}

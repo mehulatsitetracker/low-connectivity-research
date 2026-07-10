@@ -23,7 +23,7 @@ export interface Job {
   siteName: string;
   address: string;
   city: string;
-  status: JobStatus;
+  status: JobListFilterStatus;
   priority: Priority;
   dueDate: string;
   updatedAt: string;
@@ -55,8 +55,10 @@ export interface Site {
   name: string;
   county: string;
   city: string;
+  region: string;
   status: string;
   type: string;
+  carrier: string;
   updatedAt: string;
 }
 
@@ -66,8 +68,31 @@ export interface Project {
   siteName: string;
   status: string;
   type: string;
+  region: string;
+  programManager: string;
   priority: Priority;
   updatedAt: string;
+}
+
+/** Generic filter map used by the config-driven list engine. Keys are filter field ids. */
+export type FilterValues = Record<string, string | null>;
+
+/** A saved filter for any object type (jobs, sites, projects). */
+export interface SavedFilter {
+  id: string;
+  name: string;
+  filters: FilterValues;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** A suggested filter inferred from the current search query. */
+export interface FilterSuggestion {
+  id: string;
+  filterKey: string;
+  value: string;
+  label: string;
+  confidence: number;
 }
 
 export interface SearchResult {

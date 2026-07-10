@@ -157,7 +157,7 @@ function matchesQuickFilterResult(result: SearchResult, filter: QuickFilterId): 
 }
 
 function matchesSheetFiltersJob(job: Job, filters: SheetFilters): boolean {
-  if (filters.statuses.length > 0 && !filters.statuses.includes(job.status)) return false;
+  if (filters.statuses.length > 0 && !filters.statuses.includes(job.status as JobStatus)) return false;
   if (filters.priorities.length > 0 && !filters.priorities.includes(job.priority)) return false;
   if (filters.siteId) {
     const site = SITES.find(s => s.id === filters.siteId);
@@ -202,7 +202,7 @@ function applyJobFilters(jobs: Job[], quickFilters: Set<QuickFilterId>, sheetFil
       s => !(quickFilters.has('unassigned') && s === 'Unassigned'),
     );
     if (statuses.length > 0) {
-      result = result.filter(j => statuses.includes(j.status));
+      result = result.filter(j => statuses.includes(j.status as JobStatus));
     }
   }
 

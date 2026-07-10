@@ -16,13 +16,20 @@ export function SaveFilterModal({
 }: SaveFilterModalProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(initialName);
+  const [wasOpen, setWasOpen] = useState(open);
+
+  // Reset the field each time the modal opens (render-time state adjustment,
+  // per https://react.dev/learn/you-might-not-need-an-effect).
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setName(initialName);
+  }
 
   useEffect(() => {
     if (!open) return;
-    setName(initialName);
     const timer = requestAnimationFrame(() => inputRef.current?.focus());
     return () => cancelAnimationFrame(timer);
-  }, [open, initialName]);
+  }, [open]);
 
   if (!open) return null;
 
