@@ -14,6 +14,7 @@
     "dev:adhoc-job": "npm run dev -w apps/adhoc-job",
     "dev:chatter": "npm run dev -w apps/chatter",
     "dev:sparkle-help-agent": "npm run dev -w apps/sparkle-help-agent",
+    "dev:search-filtering": "npm run dev -w apps/search-filtering",
     "build": "npm run build --workspaces",
     "build:connectivity": "npm run build -w apps/connectivity",
     "build:auth-messages": "npm run build -w apps/auth-messages",

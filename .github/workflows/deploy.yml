@@ -33,7 +33,7 @@ jobs:
 
       - name: Assemble site
         run: |
-          mkdir -p _site/connectivity _site/auth-messages _site/adhoc-job _site/chatter _site/forms-improvement _site/sparkle-help-agent
+          mkdir -p _site/connectivity _site/auth-messages _site/adhoc-job _site/chatter _site/forms-improvement _site/sparkle-help-agent _site/search-filtering
           cp index.html _site/
           cp -r apps/connectivity/dist/* _site/connectivity/
           cp -r apps/auth-messages/dist/* _site/auth-messages/
@@ -41,6 +41,7 @@ jobs:
           cp -r apps/chatter/dist/* _site/chatter/
           cp -r apps/forms-improvement/dist/* _site/forms-improvement/
           cp -r apps/sparkle-help-agent/dist/* _site/sparkle-help-agent/
+          cp -r apps/search-filtering/dist/* _site/search-filtering/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

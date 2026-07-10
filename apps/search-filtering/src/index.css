@@ -1,0 +1,88 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background: #111;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes search-panel-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes search-panel-view-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheet-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.search-panel-fade {
+  animation: search-panel-fade-in 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.live-search-field {
+  transition:
+    border-color 0.25s cubic-bezier(0.25, 0.1, 0.25, 1),
+    box-shadow 0.25s cubic-bezier(0.25, 0.1, 0.25, 1),
+    flex 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.live-search-panel {
+  animation: search-panel-fade-in 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.search-panel-view {
+  animation: search-panel-view-in 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  display: none;
+}
+
+.search-result-row:active {
+  background: #F0F0F0;
+}
+
+@media (hover: hover) {
+  .search-result-row:hover {
+    background: #F7F8F7;
+  }
+}

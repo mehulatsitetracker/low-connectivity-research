@@ -17,6 +17,7 @@ const APPS = [
   'chatter',
   'forms-improvement',
   'sparkle-help-agent',
+  'search-filtering',
 ]
 
 const viteServers = await Promise.all(

@@ -1,0 +1,146 @@
+export type ScreenId = 'home' | 'menu' | 'all-jobs' | 'all-sites' | 'all-projects';
+export type ActiveTab = 'home' | 'map' | 'menu';
+
+export type ObjectType = 'job' | 'site' | 'project' | 'template';
+export type QuickFilterId = 'today' | 'overdue' | 'unassigned';
+export type Priority = 'High' | 'Medium' | 'Low';
+export type JobStatus = 'Unassigned' | 'Assigned' | 'Scheduled' | 'In Progress' | 'Completed' | 'Cancelled';
+
+export type JobListFilterStatus =
+  | 'Unassigned'
+  | 'Assigned'
+  | 'Scheduled'
+  | 'In Progress'
+  | 'Ready for review'
+  | 'In Review'
+  | 'Review Complete'
+  | 'Completed'
+  | 'Cancelled';
+
+export interface Job {
+  id: string;
+  templateName: string;
+  siteName: string;
+  address: string;
+  city: string;
+  status: JobStatus;
+  priority: Priority;
+  dueDate: string;
+  updatedAt: string;
+  area: string;
+  contract: string;
+  gtr: string;
+  assignee: string | null;
+}
+
+export interface JobListFilters {
+  status: JobListFilterStatus | null;
+  site: string | null;
+  template: string | null;
+  contract: string | null;
+  gtr: string | null;
+  assignee: string | null;
+}
+
+export interface SavedJobFilter {
+  id: string;
+  name: string;
+  filters: JobListFilters;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface Site {
+  id: string;
+  name: string;
+  county: string;
+  city: string;
+  status: string;
+  type: string;
+  updatedAt: string;
+}
+
+export interface Project {
+  id: string;
+  templateName: string;
+  siteName: string;
+  status: string;
+  type: string;
+  priority: Priority;
+  updatedAt: string;
+}
+
+export interface SearchResult {
+  type: ObjectType;
+  id: string;
+  title: string;
+  subtitle: string;
+}
+
+export interface SheetFilters {
+  statuses: JobStatus[];
+  priorities: Priority[];
+  siteId: string | null;
+}
+
+export interface ActiveFilterChip {
+  id: string;
+  label: string;
+  source: 'quick' | 'sheet';
+}
+
+export interface ScreenDef {
+  id: ScreenId;
+  name: string;
+}
+
+export const SCREENS: ScreenDef[] = [
+  { id: 'home', name: 'Home' },
+  { id: 'all-jobs', name: 'All Jobs' },
+  { id: 'all-sites', name: 'All Sites' },
+  { id: 'all-projects', name: 'All Projects' },
+];
+
+export interface AppState {
+  screen: ScreenId;
+  activeTab: ActiveTab;
+  screenHistory: ScreenId[];
+}
+
+export const QUICK_FILTER_LABELS: Record<QuickFilterId, string> = {
+  today: 'Today',
+  overdue: 'Overdue',
+  unassigned: 'Unassigned',
+};
+
+export const STATUS_OPTIONS: JobStatus[] = [
+  'Unassigned', 'Assigned', 'Scheduled', 'In Progress', 'Completed', 'Cancelled',
+];
+
+export const DEFAULT_SHEET_FILTERS: SheetFilters = {
+  statuses: [],
+  priorities: [],
+  siteId: null,
+};
+
+/** List-view + field workflow statuses (field workflow set matches adhoc-job JOB_STATUSES). */
+export const JOB_LIST_STATUS_OPTIONS: JobListFilterStatus[] = [
+  'Unassigned',
+  'Assigned',
+  'Scheduled',
+  'In Progress',
+  'Ready for review',
+  'In Review',
+  'Review Complete',
+  'Completed',
+  'Cancelled',
+];
+
+export const DEFAULT_JOB_LIST_FILTERS: JobListFilters = {
+  status: null,
+  site: null,
+  template: null,
+  contract: null,
+  gtr: null,
+  assignee: null,
+};
