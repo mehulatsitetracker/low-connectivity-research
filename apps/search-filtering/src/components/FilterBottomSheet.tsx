@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, ChevronLeft, Search } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, Search, Star } from 'lucide-react';
 import { colors, radii } from '../theme';
 import { HighlightedText } from './HighlightedText';
 import { emptyFilters } from '../utils/listEngine';
+import { buildSavedFilterSummary } from '../utils/savedFilters';
 import type { FilterValues } from '../types';
 import type { ListConfig } from '../config/listConfigs';
 
@@ -12,15 +13,14 @@ interface FilterBottomSheetProps<T> {
   filters: FilterValues;
   onChange: (filters: FilterValues) => void;
   onClose: () => void;
+  onSaveFilter?: () => void;
+  activeFilterCount?: number;
   highlightQuery?: string;
 }
 
-function Section({ title, children, showDivider }: { title: string; children: React.ReactNode; showDivider?: boolean }) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{
-      paddingBottom: 12,
-      ...(showDivider ? { marginBottom: 12, borderBottom: `1px solid ${colors.border}` } : {}),
-    }}>
+    <div style={{ paddingBottom: 12 }}>
       <div style={{
         fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
         color: colors.textSecondary, marginBottom: 8,
@@ -45,11 +45,20 @@ function FilterSearchPicker({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState(initialQuery);
+  const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
     const timer = requestAnimationFrame(() => inputRef.current?.focus());
     return () => cancelAnimationFrame(timer);
   }, []);
+
+  const handleBack = () => {
+    setExiting(true);
+  };
+
+  const handleAnimationEnd = () => {
+    if (exiting) onClose();
+  };
 
   const filteredOptions = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -58,17 +67,21 @@ function FilterSearchPicker({
   }, [options, query]);
 
   return (
-    <div style={{
-      position: 'absolute', inset: 0, zIndex: 10, display: 'flex', flexDirection: 'column',
-      background: colors.surface, animation: 'sheet-slide-up 0.25s ease-out',
-    }}>
+    <div
+      className={exiting ? 'filter-picker-slide-out' : 'filter-picker-slide-in'}
+      onAnimationEnd={handleAnimationEnd}
+      style={{
+        position: 'absolute', inset: 0, zIndex: 10, display: 'flex', flexDirection: 'column',
+        background: colors.surface,
+      }}
+    >
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px 12px',
         borderBottom: `1px solid ${colors.borderLight}`, flexShrink: 0,
       }}>
         <button
           type="button"
-          onClick={onClose}
+          onClick={handleBack}
           aria-label="Back to filters"
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', flexShrink: 0 }}
         >
@@ -145,10 +158,24 @@ function FilterTriggerField({
   );
 }
 
-export function FilterBottomSheet<T>({ open, config, filters, onChange, onClose, highlightQuery = '' }: FilterBottomSheetProps<T>) {
+export function FilterBottomSheet<T>({
+  open,
+  config,
+  filters,
+  onChange,
+  onClose,
+  onSaveFilter,
+  activeFilterCount = 0,
+  highlightQuery = '',
+}: FilterBottomSheetProps<T>) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragStartY = useRef<number | null>(null);
   const [openPicker, setOpenPicker] = useState<string | null>(null);
+  const activeFilterSummary = useMemo(
+    () => buildSavedFilterSummary(config, filters),
+    [config, filters],
+  );
+  const showSaveFooter = activeFilterCount > 0 && !openPicker && onSaveFilter;
 
   if (!open) return null;
 
@@ -219,33 +246,81 @@ export function FilterBottomSheet<T>({ open, config, filters, onChange, onClose,
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 16px', position: 'relative' }}>
-          {config.filterFields.map((field, index) => (
-            <Section key={field.key} title={field.label} showDivider={index < config.filterFields.length - 1}>
-              <FilterTriggerField
-                selected={filters[field.key] ?? null}
-                placeholder={field.placeholder}
-                onOpen={() => setOpenPicker(field.key)}
-                highlightQuery={highlightQuery}
-              />
-            </Section>
-          ))}
+        <div style={{ flex: 1, overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+          <div style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '12px 16px 16px',
+            position: 'relative',
+            overflowX: 'hidden',
+          }}>
+            {config.filterFields.map(field => (
+              <Section key={field.key} title={field.label}>
+                <FilterTriggerField
+                  selected={filters[field.key] ?? null}
+                  placeholder={field.placeholder}
+                  onOpen={() => setOpenPicker(field.key)}
+                  highlightQuery={highlightQuery}
+                />
+              </Section>
+            ))}
 
-          {activePickerField && (
-            <FilterSearchPicker
-              options={activePickerField.options}
-              selected={filters[activePickerField.key] ?? null}
-              initialQuery={highlightQuery}
-              searchPlaceholder={activePickerField.searchPlaceholder}
-              emptyMessage={activePickerField.emptyMessage}
-              onSelect={value => {
-                onChange({ ...filters, [activePickerField.key]: value });
-                setOpenPicker(null);
-              }}
-              onClose={() => setOpenPicker(null)}
-            />
-          )}
+            {activePickerField && (
+              <FilterSearchPicker
+                options={activePickerField.options}
+                selected={filters[activePickerField.key] ?? null}
+                initialQuery={highlightQuery}
+                searchPlaceholder={activePickerField.searchPlaceholder}
+                emptyMessage={activePickerField.emptyMessage}
+                onSelect={value => {
+                  onChange({ ...filters, [activePickerField.key]: value });
+                  setOpenPicker(null);
+                }}
+                onClose={() => setOpenPicker(null)}
+              />
+            )}
+          </div>
         </div>
+
+        {showSaveFooter && (
+          <div style={{
+            flexShrink: 0,
+            padding: '12px 16px 16px',
+            borderTop: `1px solid ${colors.borderLight}`,
+            background: colors.surface,
+          }}>
+            <div style={{
+              fontSize: 12,
+              color: colors.textSecondary,
+              marginBottom: 10,
+              lineHeight: 1.4,
+            }}>
+              {activeFilterSummary.join(' · ')}
+            </div>
+            <button
+              type="button"
+              onClick={onSaveFilter}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: '12px 16px',
+                borderRadius: radii.pill,
+                border: 'none',
+                background: colors.brandTeal,
+                color: '#fff',
+                fontSize: 15,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              <Star size={16} fill="#fff" />
+              Save Filter
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
