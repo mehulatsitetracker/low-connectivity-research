@@ -131,6 +131,11 @@ export function ObjectListScreen<T>({ config, activeTab, onAction }: ObjectListS
 
   const handleQueryChange = useCallback((value: string) => setQuery(value), []);
 
+  const handleSearchClose = useCallback(() => {
+    setQuery('');
+    setSearchFocused(false);
+  }, []);
+
   const handleApplyFilterSuggestion = useCallback((suggestion: FilterSuggestion) => {
     setFilters(prev => applyFilterSuggestion(prev, suggestion));
     setQuery('');
@@ -203,6 +208,7 @@ export function ObjectListScreen<T>({ config, activeTab, onAction }: ObjectListS
             query={query}
             onQueryChange={handleQueryChange}
             onFocus={handleSearchFocus}
+            onClose={handleSearchClose}
             focused={searchFocused}
             activeFilterCount={activeFilterCount}
             onFilterClick={() => setSheetOpen(true)}

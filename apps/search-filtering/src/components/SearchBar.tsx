@@ -9,6 +9,7 @@ interface SearchBarProps {
   onQueryChange?: (query: string) => void;
   onFocus?: () => void;
   onBlur?: () => void;
+  onClose?: () => void;
   focused?: boolean;
 }
 
@@ -20,9 +21,16 @@ export function SearchBar({
   onQueryChange,
   onFocus,
   onBlur,
+  onClose,
   focused = false,
 }: SearchBarProps) {
   const interactive = onQueryChange !== undefined;
+  const showClose = interactive && (focused || query.length > 0);
+
+  const handleClose = () => {
+    onQueryChange?.('');
+    onClose?.();
+  };
 
   return (
     <div style={{
@@ -64,11 +72,12 @@ export function SearchBar({
                 minWidth: 0,
               }}
             />
-            {query.length > 0 && (
+            {showClose && (
               <button
                 type="button"
-                onClick={() => onQueryChange('')}
-                aria-label="Clear search"
+                onMouseDown={e => e.preventDefault()}
+                onClick={handleClose}
+                aria-label="Close search"
                 style={{
                   background: 'none', border: 'none', cursor: 'pointer',
                   padding: 2, display: 'flex', alignItems: 'center', flexShrink: 0,

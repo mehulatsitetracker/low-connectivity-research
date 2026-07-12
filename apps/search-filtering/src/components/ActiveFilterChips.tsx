@@ -5,44 +5,61 @@ import type { ActiveFilterChip } from '../types';
 
 interface ActiveFilterChipsProps {
   chips: ActiveFilterChip[];
-  onRemove: (chipId: string) => void;
+  onRemove?: (chipId: string) => void;
   highlightQuery?: string;
+  readOnly?: boolean;
+  wrap?: boolean;
+  padding?: string;
 }
 
-export function ActiveFilterChips({ chips, onRemove, highlightQuery = '' }: ActiveFilterChipsProps) {
+export function ActiveFilterChips({
+  chips,
+  onRemove,
+  highlightQuery = '',
+  readOnly = false,
+  wrap = false,
+  padding = '10px 16px 0',
+}: ActiveFilterChipsProps) {
   if (chips.length === 0) return null;
+
+  const chipStyle = {
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    padding: readOnly ? '4px 10px' : '5px 10px 5px 12px',
+    borderRadius: radii.pill,
+    fontSize: readOnly ? 12 : 13,
+    fontWeight: 500,
+    border: `1px solid ${colors.brandTeal}`,
+    background: colors.brandTealLight,
+    color: colors.brandTeal,
+  } as const;
 
   return (
     <div style={{
       display: 'flex',
-      gap: 8,
-      padding: '10px 16px 0',
-      overflowX: 'auto',
-      flexWrap: 'nowrap',
+      gap: readOnly ? 6 : 8,
+      padding,
+      overflowX: wrap ? 'visible' : 'auto',
+      flexWrap: wrap ? 'wrap' : 'nowrap',
     }}>
       {chips.map(chip => (
-        <button
-          key={chip.id}
-          type="button"
-          onClick={() => onRemove(chip.id)}
-          style={{
-            flexShrink: 0,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '5px 10px 5px 12px',
-            borderRadius: radii.pill,
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: 'pointer',
-            border: `1px solid ${colors.brandTeal}`,
-            background: colors.brandTealLight,
-            color: colors.brandTeal,
-          }}
-        >
-          <HighlightedText text={chip.label} query={highlightQuery} />
-          <X size={14} strokeWidth={2.5} />
-        </button>
+        readOnly ? (
+          <span key={chip.id} style={chipStyle}>
+            <HighlightedText text={chip.label} query={highlightQuery} />
+          </span>
+        ) : (
+          <button
+            key={chip.id}
+            type="button"
+            onClick={() => onRemove?.(chip.id)}
+            style={{ ...chipStyle, cursor: 'pointer' }}
+          >
+            <HighlightedText text={chip.label} query={highlightQuery} />
+            <X size={14} strokeWidth={2.5} />
+          </button>
+        )
       ))}
     </div>
   );

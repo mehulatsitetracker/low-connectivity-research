@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, ChevronLeft, Search, Star } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Search, Star } from 'lucide-react';
 import { colors, radii } from '../theme';
 import { HighlightedText } from './HighlightedText';
 import { emptyFilters } from '../utils/listEngine';
-import { buildSavedFilterSummary } from '../utils/savedFilters';
 import type { FilterValues } from '../types';
 import type { ListConfig } from '../config/listConfigs';
 
@@ -18,12 +17,24 @@ interface FilterBottomSheetProps<T> {
   highlightQuery?: string;
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+  selected,
+}: {
+  title: string;
+  children: React.ReactNode;
+  selected?: boolean;
+}) {
   return (
-    <div style={{ paddingBottom: 12 }}>
+    <div style={{ marginBottom: 10, padding: '0 2px' }}>
       <div style={{
-        fontSize: 12, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase',
-        color: colors.textSecondary, marginBottom: 8,
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: 0.5,
+        textTransform: 'uppercase',
+        color: selected ? colors.brandTeal : colors.textSecondary,
+        marginBottom: 6,
       }}>
         {title}
       </div>
@@ -37,7 +48,7 @@ function FilterSearchPicker({
 }: {
   options: readonly string[];
   selected: string | null;
-  onSelect: (value: string) => void;
+  onSelect: (value: string | null) => void;
   onClose: () => void;
   searchPlaceholder: string;
   emptyMessage: string;
@@ -109,24 +120,27 @@ function FilterSearchPicker({
             {emptyMessage}
           </div>
         ) : (
-          filteredOptions.map(option => (
+          filteredOptions.map(option => {
+            const isSelected = option === selected;
+            return (
             <button
               key={option}
               type="button"
-              onClick={() => onSelect(option)}
+              onClick={() => onSelect(isSelected ? null : option)}
               className="search-result-row"
               style={{
                 width: '100%', textAlign: 'left', padding: '14px 16px',
-                background: option === selected ? colors.brandTealLight : 'none',
+                background: isSelected ? colors.brandTealLight : 'none',
                 border: 'none', borderBottom: `1px solid ${colors.borderLight}`,
                 fontSize: 15, color: colors.textPrimary, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               }}
             >
               <HighlightedText text={option} query={query} />
-              {option === selected && <Check size={18} color={colors.brandTeal} />}
+              {isSelected && <Check size={18} color={colors.brandTeal} />}
             </button>
-          ))
+            );
+          })
         )}
       </div>
     </div>
@@ -141,20 +155,49 @@ function FilterTriggerField({
   onOpen: () => void;
   highlightQuery: string;
 }) {
+  const hasValue = Boolean(selected);
+
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onOpen}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
       style={{
-        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '10px 12px', border: `1px solid ${colors.border}`, borderRadius: radii.input,
-        background: colors.surface, fontSize: 14,
-        color: selected ? colors.textPrimary : colors.textTertiary, cursor: 'pointer',
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        padding: '10px 12px',
+        borderRadius: radii.input,
+        background: colors.surface,
+        border: hasValue ? `1px solid ${colors.brandTeal}` : `1px solid ${colors.border}`,
+        cursor: 'pointer',
       }}
     >
-      <span>{selected ? <HighlightedText text={selected} query={highlightQuery} /> : placeholder}</span>
-      <ChevronDown size={16} color={colors.textSecondary} style={{ flexShrink: 0 }} />
-    </button>
+      <span style={{
+        flex: 1,
+        minWidth: 0,
+        fontSize: 15,
+        fontWeight: hasValue ? 600 : 400,
+        color: hasValue ? colors.textPrimary : colors.textTertiary,
+      }}>
+        {hasValue
+          ? <HighlightedText text={selected!} query={highlightQuery} />
+          : placeholder}
+      </span>
+      <ChevronRight
+        size={16}
+        color={hasValue ? colors.brandTeal : colors.textTertiary}
+        style={{ flexShrink: 0 }}
+      />
+    </div>
   );
 }
 
@@ -171,10 +214,6 @@ export function FilterBottomSheet<T>({
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragStartY = useRef<number | null>(null);
   const [openPicker, setOpenPicker] = useState<string | null>(null);
-  const activeFilterSummary = useMemo(
-    () => buildSavedFilterSummary(config, filters),
-    [config, filters],
-  );
   const showSaveFooter = activeFilterCount > 0 && !openPicker && onSaveFilter;
 
   if (!open) return null;
@@ -254,16 +293,19 @@ export function FilterBottomSheet<T>({
             position: 'relative',
             overflowX: 'hidden',
           }}>
-            {config.filterFields.map(field => (
-              <Section key={field.key} title={field.label}>
-                <FilterTriggerField
-                  selected={filters[field.key] ?? null}
-                  placeholder={field.placeholder}
-                  onOpen={() => setOpenPicker(field.key)}
-                  highlightQuery={highlightQuery}
-                />
-              </Section>
-            ))}
+            {config.filterFields.map(field => {
+              const value = filters[field.key] ?? null;
+              return (
+                <Section key={field.key} title={field.label} selected={Boolean(value)}>
+                  <FilterTriggerField
+                    selected={value}
+                    placeholder={field.placeholder}
+                    onOpen={() => setOpenPicker(field.key)}
+                    highlightQuery={highlightQuery}
+                  />
+                </Section>
+              );
+            })}
 
             {activePickerField && (
               <FilterSearchPicker
@@ -289,14 +331,6 @@ export function FilterBottomSheet<T>({
             borderTop: `1px solid ${colors.borderLight}`,
             background: colors.surface,
           }}>
-            <div style={{
-              fontSize: 12,
-              color: colors.textSecondary,
-              marginBottom: 10,
-              lineHeight: 1.4,
-            }}>
-              {activeFilterSummary.join(' · ')}
-            </div>
             <button
               type="button"
               onClick={onSaveFilter}
