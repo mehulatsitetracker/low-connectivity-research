@@ -6,6 +6,11 @@ import { LiveSearchBar } from '../components/LiveSearchBar';
 import { SearchResultsList } from '../components/SearchResultsList';
 import { RecentlyViewedList } from '../components/RecentlyViewedList';
 import { RECENT_SEARCHES, RECENTLY_VIEWED } from '../data/objects';
+import {
+  loadHomeRecentSearches,
+  pushRecentSearch,
+  saveHomeRecentSearches,
+} from '../utils/recentSearches';
 import { filterAndSearch, groupResults } from '../utils/search';
 import type { ActiveTab, QuickFilterId, SearchResult } from '../types';
 import { DEFAULT_SHEET_FILTERS } from '../types';
@@ -29,7 +34,11 @@ function useDebounce<T>(value: T, delay: number): T {
 export function HomeScreen({ activeTab, onAction }: HomeScreenProps) {
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
-  const [recentSearches, setRecentSearches] = useState(RECENT_SEARCHES);
+  const [recentSearches, setRecentSearches] = useState(() => loadHomeRecentSearches(RECENT_SEARCHES));
+
+  useEffect(() => {
+    saveHomeRecentSearches(recentSearches);
+  }, [recentSearches]);
 
   const debouncedQuery = useDebounce(query, 200);
   const isTyping = query.trim().length > 0;
@@ -49,14 +58,21 @@ export function HomeScreen({ activeTab, onAction }: HomeScreenProps) {
   const showSearchResults = !focused && debouncedQuery.trim().length > 0;
 
   const handleSelect = useCallback((result: SearchResult) => {
-    setRecentSearches(prev => [result.title, ...prev.filter(s => s !== result.title)].slice(0, 5));
+    setRecentSearches(prev => pushRecentSearch(prev, result.title));
     onAction(`select-${result.type}:${result.id}`);
   }, [onAction]);
 
   const handleRecentSelect = useCallback((term: string) => {
     setQuery(term);
-    setRecentSearches(prev => [term, ...prev.filter(s => s !== term)].slice(0, 5));
+    setRecentSearches(prev => pushRecentSearch(prev, term));
+    setFocused(true);
   }, []);
+
+  const handleDismiss = useCallback(() => {
+    const trimmed = query.trim();
+    if (trimmed) setRecentSearches(prev => pushRecentSearch(prev, trimmed));
+    setFocused(false);
+  }, [query]);
 
   const handleClearRecentSearches = useCallback(() => {
     setRecentSearches([]);
@@ -105,7 +121,7 @@ export function HomeScreen({ activeTab, onAction }: HomeScreenProps) {
           recentSearches={recentSearches}
           onQueryChange={setQuery}
           onFocus={() => setFocused(true)}
-          onDismiss={() => setFocused(false)}
+          onDismiss={handleDismiss}
           onClear={() => setQuery('')}
           onRecentSelect={handleRecentSelect}
           onClearRecentSearches={handleClearRecentSearches}

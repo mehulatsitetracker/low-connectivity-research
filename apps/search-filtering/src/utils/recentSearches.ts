@@ -4,6 +4,31 @@ export const MAX_RECENT_SEARCHES = 5;
 
 const key = (prefix: string) => `${prefix}-recent-searches`;
 
+const HOME_KEY = 'home-recent-searches';
+
+export function loadHomeRecentSearches(defaults: string[]): string[] {
+  try {
+    const raw = localStorage.getItem(HOME_KEY);
+    if (!raw) return defaults;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return defaults;
+    const stored = parsed
+      .filter((item): item is string => typeof item === 'string')
+      .slice(0, MAX_RECENT_SEARCHES);
+    return stored.length > 0 ? stored : defaults;
+  } catch {
+    return defaults;
+  }
+}
+
+export function saveHomeRecentSearches(searches: string[]): void {
+  try {
+    localStorage.setItem(HOME_KEY, JSON.stringify(searches.slice(0, MAX_RECENT_SEARCHES)));
+  } catch {
+    // Storage unavailable — silently ignore for prototype.
+  }
+}
+
 export function loadRecentSearches<T>(config: ListConfig<T>): string[] {
   try {
     const raw = localStorage.getItem(key(config.storagePrefix));

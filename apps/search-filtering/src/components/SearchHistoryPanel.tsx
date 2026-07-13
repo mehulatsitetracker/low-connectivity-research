@@ -8,9 +8,13 @@ import { formatViewedAgo } from '../utils/recentlyViewed';
 const MAX_SAVED_FILTER_LABELS = 2;
 
 function getSavedFilterLabels<T>(config: ListConfig<T>, filters: FilterValues): string[] {
-  return config.filterFields
-    .filter(field => filters[field.key])
-    .map(field => filters[field.key]!);
+  const labels: string[] = [];
+  for (const field of config.filterFields) {
+    for (const value of filters[field.key] ?? []) {
+      labels.push(value);
+    }
+  }
+  return labels;
 }
 
 function SavedFilterSummaryText({ labels }: { labels: string[] }) {
@@ -18,12 +22,13 @@ function SavedFilterSummaryText({ labels }: { labels: string[] }) {
 
   const visible = labels.slice(0, MAX_SAVED_FILTER_LABELS);
   const overflow = labels.length - visible.length;
-  const parts = [...visible];
-  if (overflow > 0) parts.push(`+${overflow}`);
+  const summary = overflow > 0
+    ? `${visible.join(' • ')} +${overflow}`
+    : visible.join(' • ');
 
   return (
     <div style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 1.4 }}>
-      {parts.join(' • ')}
+      {summary}
     </div>
   );
 }
@@ -69,7 +74,7 @@ export function SearchHistoryPanel<T>({
             <span style={sectionLabelStyle}>Recent Searches</span>
             <button
               type="button"
-              onMouseDown={e => e.preventDefault()}
+              onPointerDown={e => e.preventDefault()}
               onClick={onClearRecentSearches}
               style={{ background: 'none', border: 'none', fontSize: 14, fontWeight: 500, color: colors.brandTeal, cursor: 'pointer', padding: 0 }}
             >
@@ -83,7 +88,7 @@ export function SearchHistoryPanel<T>({
               <button
                 key={term}
                 type="button"
-                onMouseDown={e => e.preventDefault()}
+                onPointerDown={e => e.preventDefault()}
                 onClick={() => onRecentSearchSelect(term)}
                 className="search-result-row"
                 style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer' }}
@@ -120,7 +125,7 @@ export function SearchHistoryPanel<T>({
             <button
               key={id}
               type="button"
-              onMouseDown={e => e.preventDefault()}
+              onPointerDown={e => e.preventDefault()}
               onClick={() => onRecentlyViewedSelect(id)}
               className="search-result-row"
               style={{ display: 'flex', alignItems: 'flex-start', gap: 12, width: '100%', textAlign: 'left', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer' }}
@@ -165,7 +170,7 @@ export function SearchHistoryPanel<T>({
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <button
                     type="button"
-                    onMouseDown={e => e.preventDefault()}
+                    onPointerDown={e => e.preventDefault()}
                     onClick={() => onSavedFilterSelect(saved.id)}
                     className="search-result-row"
                     style={{
@@ -188,7 +193,7 @@ export function SearchHistoryPanel<T>({
                   </button>
                   <button
                     type="button"
-                    onMouseDown={e => e.preventDefault()}
+                    onPointerDown={e => e.preventDefault()}
                     onClick={() => onSavedFilterMenu(saved.id)}
                     aria-label={`Actions for ${saved.name}`}
                     style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
@@ -199,7 +204,7 @@ export function SearchHistoryPanel<T>({
                 {chipLabels.length > 0 && (
                   <button
                     type="button"
-                    onMouseDown={e => e.preventDefault()}
+                    onPointerDown={e => e.preventDefault()}
                     onClick={() => onSavedFilterSelect(saved.id)}
                     className="search-result-row"
                     style={{

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Star } from 'lucide-react';
 import { colors } from '../theme';
 import { TopBar } from '../components/TopBar';
 import { SearchBar } from '../components/SearchBar';
@@ -238,22 +237,12 @@ export function ObjectListScreen<T>({ config, activeTab, onAction }: ObjectListS
           />
         )}
 
-        <ActiveFilterChips chips={activeChips} onRemove={handleRemoveChip} highlightQuery={debouncedQuery} />
-
-        {activeFilterCount > 0 && !showSearchHistory && (
-          <button
-            type="button"
-            onClick={handleOpenSaveModal}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 5, margin: '4px 16px 0',
-              padding: '5px 0', background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 12, fontWeight: 500, color: colors.textSecondary,
-            }}
-          >
-            <Star size={12} color={colors.brandTeal} fill={colors.brandTeal} />
-            Save Current Filter
-          </button>
-        )}
+        <ActiveFilterChips
+          chips={activeChips}
+          onRemove={handleRemoveChip}
+          highlightQuery={debouncedQuery}
+          resultCount={activeFilterCount > 0 ? visibleItems.length : undefined}
+        />
 
         {!showSearchHistory && (
           <div

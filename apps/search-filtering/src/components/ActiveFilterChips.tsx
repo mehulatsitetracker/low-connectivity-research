@@ -10,6 +10,12 @@ interface ActiveFilterChipsProps {
   readOnly?: boolean;
   wrap?: boolean;
   padding?: string;
+  resultCount?: number;
+}
+
+function formatResultCount(count: number): string {
+  const label = count === 1 ? 'result' : 'results';
+  return `Found (${count}) ${label}`;
 }
 
 export function ActiveFilterChips({
@@ -19,8 +25,11 @@ export function ActiveFilterChips({
   readOnly = false,
   wrap = false,
   padding = '10px 16px 0',
+  resultCount,
 }: ActiveFilterChipsProps) {
   if (chips.length === 0) return null;
+
+  const showResultCount = resultCount !== undefined;
 
   const chipStyle = {
     flexShrink: 0,
@@ -37,30 +46,41 @@ export function ActiveFilterChips({
   } as const;
 
   return (
-    <div style={{
-      display: 'flex',
-      gap: readOnly ? 6 : 8,
-      padding,
-      overflowX: wrap ? 'visible' : 'auto',
-      flexWrap: wrap ? 'wrap' : 'nowrap',
-    }}>
-      {chips.map(chip => (
-        readOnly ? (
-          <span key={chip.id} style={chipStyle}>
-            <HighlightedText text={chip.label} query={highlightQuery} />
-          </span>
-        ) : (
-          <button
-            key={chip.id}
-            type="button"
-            onClick={() => onRemove?.(chip.id)}
-            style={{ ...chipStyle, cursor: 'pointer' }}
-          >
-            <HighlightedText text={chip.label} query={highlightQuery} />
-            <X size={14} strokeWidth={2.5} />
-          </button>
-        )
-      ))}
+    <div style={{ padding }}>
+      <div style={{
+        display: 'flex',
+        gap: readOnly ? 6 : 8,
+        overflowX: wrap ? 'visible' : 'auto',
+        flexWrap: wrap ? 'wrap' : 'nowrap',
+      }}>
+        {chips.map(chip => (
+          readOnly ? (
+            <span key={chip.id} style={chipStyle}>
+              <HighlightedText text={chip.label} query={highlightQuery} />
+            </span>
+          ) : (
+            <button
+              key={chip.id}
+              type="button"
+              onClick={() => onRemove?.(chip.id)}
+              style={{ ...chipStyle, cursor: 'pointer' }}
+            >
+              <HighlightedText text={chip.label} query={highlightQuery} />
+              <X size={14} strokeWidth={2.5} />
+            </button>
+          )
+        ))}
+      </div>
+      {showResultCount && (
+        <div style={{
+          marginTop: 8,
+          fontSize: 13,
+          fontWeight: 500,
+          color: colors.textSecondary,
+        }}>
+          {formatResultCount(resultCount)}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { FilterValues, SavedFilter } from '../types';
 import type { ListConfig } from '../config/listConfigs';
+import { cloneFilters, normalizeFilters } from './listEngine';
 
 const key = (prefix: string) => `${prefix}-saved-filters`;
 
@@ -9,7 +10,10 @@ export function loadSavedFilters(prefix: string): SavedFilter[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isValidSavedFilter);
+    return parsed.filter(isValidSavedFilter).map(item => ({
+      ...item,
+      filters: normalizeFilters(item.filters as Record<string, unknown>),
+    }));
   } catch {
     return [];
   }
@@ -27,8 +31,10 @@ export function saveSavedFilters(prefix: string, filters: SavedFilter[]): void {
 export function buildSavedFilterSummary<T>(config: ListConfig<T>, filters: FilterValues): string[] {
   const lines: string[] = [];
   for (const field of config.filterFields) {
-    const value = filters[field.key];
-    if (value) lines.push(`${field.label}: ${value}`);
+    const values = filters[field.key] ?? [];
+    if (values.length > 0) {
+      lines.push(`${field.label}: ${values.join(', ')}`);
+    }
   }
   return lines;
 }
@@ -38,7 +44,7 @@ export function createSavedFilter(name: string, filters: FilterValues): SavedFil
   return {
     id: `saved-${now}-${Math.random().toString(36).slice(2, 8)}`,
     name: name.trim(),
-    filters: { ...filters },
+    filters: cloneFilters(filters),
     createdAt: now,
     updatedAt: now,
   };

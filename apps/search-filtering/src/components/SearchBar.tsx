@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { colors, radii } from '../theme';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 
@@ -24,8 +25,14 @@ export function SearchBar({
   onClose,
   focused = false,
 }: SearchBarProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const interactive = onQueryChange !== undefined;
   const showClose = interactive && (focused || query.length > 0);
+
+  const focusField = () => {
+    inputRef.current?.focus();
+    onFocus?.();
+  };
 
   const handleClose = () => {
     onQueryChange?.('');
@@ -39,7 +46,13 @@ export function SearchBar({
       gap: 8,
       margin: '12px 16px',
     }}>
-      <div style={{
+      <div
+        onClick={e => {
+          if (!interactive) return;
+          if ((e.target as HTMLElement).closest('button')) return;
+          focusField();
+        }}
+        style={{
         flex: 1,
         display: 'flex',
         alignItems: 'center',
@@ -51,11 +64,13 @@ export function SearchBar({
         minWidth: 0,
         boxShadow: focused ? `0 0 0 2px ${colors.brandTealLight}` : 'none',
         transition: 'border-color 0.25s cubic-bezier(0.25, 0.1, 0.25, 1), box-shadow 0.25s cubic-bezier(0.25, 0.1, 0.25, 1)',
+        cursor: interactive ? 'text' : 'default',
       }}>
         <Search size={18} color={colors.textTertiary} />
         {interactive ? (
           <>
             <input
+              ref={inputRef}
               type="text"
               value={query}
               placeholder={placeholder}
@@ -75,7 +90,7 @@ export function SearchBar({
             {showClose && (
               <button
                 type="button"
-                onMouseDown={e => e.preventDefault()}
+                onPointerDown={e => e.preventDefault()}
                 onClick={handleClose}
                 aria-label="Close search"
                 style={{

@@ -52,39 +52,56 @@ export function LiveSearchBar({
         onDismiss();
       }
     };
-    document.addEventListener('pointerdown', handlePointerDown);
-    return () => document.removeEventListener('pointerdown', handlePointerDown);
+    let active = true;
+    const id = window.requestAnimationFrame(() => {
+      if (!active) return;
+      document.addEventListener('pointerdown', handlePointerDown);
+    });
+    return () => {
+      active = false;
+      window.cancelAnimationFrame(id);
+      document.removeEventListener('pointerdown', handlePointerDown);
+    };
   }, [focused, onDismiss]);
 
-  const showPanel = focused;
+  const focusField = () => {
+    inputRef.current?.focus();
+    onFocus();
+  };
+
   const showRecent = focused && query.length === 0 && !hasActiveFilters;
   const showResults = focused && (query.length > 0 || hasActiveFilters);
+  const showPanel = showRecent || showResults;
 
   return (
-    <div ref={containerRef} className="live-search-container" style={{ position: 'relative', zIndex: 20 }}>
+    <div
+      ref={containerRef}
+      className="live-search-container"
+      style={{ position: 'relative', zIndex: 20, margin: '12px 16px 0' }}
+    >
       <div
-        className="live-search-row"
+        className={`live-search-module${focused ? ' live-search-module--focused' : ''}`}
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          margin: '12px 16px 0',
+          background: colors.surface,
+          border: `1px solid ${focused ? colors.brandTeal : colors.border}`,
+          borderRadius: radii.input,
+          boxShadow: focused ? `0 0 0 2px ${colors.brandTealLight}` : 'none',
+          overflow: 'hidden',
         }}
       >
         <div
           className={`live-search-field${focused ? ' live-search-field--focused' : ''}`}
+          onClick={e => {
+            if ((e.target as HTMLElement).closest('button')) return;
+            focusField();
+          }}
           style={{
-            flex: 1,
-            minWidth: 0,
             display: 'flex',
             alignItems: 'center',
             gap: 10,
             padding: '7px 12px',
             height: 36,
-            background: colors.surface,
-            border: `1px solid ${focused ? colors.brandTeal : colors.border}`,
-            borderRadius: radii.input,
-            boxShadow: focused ? `0 0 0 2px ${colors.brandTealLight}` : 'none',
+            cursor: 'text',
           }}
         >
           <Search size={17} color={colors.textTertiary} style={{ flexShrink: 0 }} />
@@ -93,7 +110,7 @@ export function LiveSearchBar({
             type="search"
             enterKeyHint="search"
             value={query}
-            placeholder={focused ? '' : 'Search Jobs, Sites or Projects'}
+            placeholder={focused ? '' : 'Search'}
             onChange={e => onQueryChange(e.target.value)}
             onFocus={onFocus}
             style={{
@@ -112,6 +129,7 @@ export function LiveSearchBar({
           {query.length > 0 && (
             <button
               type="button"
+              onPointerDown={e => e.preventDefault()}
               onClick={onClear}
               aria-label="Clear search"
               className="search-clear-btn"
@@ -149,109 +167,109 @@ export function LiveSearchBar({
             </button>
           )}
         </div>
-      </div>
 
-      {showPanel && (
-        <div
-          className="live-search-panel"
-          style={{
-            margin: '20px 16px',
-            background: colors.surface,
-            border: `1px solid ${colors.borderLight}`,
-            borderTop: 'none',
-            borderRadius: `0 0 ${radii.input}px ${radii.input}px`,
-            overflow: 'hidden',
-          }}
-        >
-          {showRecent && (
-            <div className="search-panel-view search-panel-view--visible">
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 14px 6px',
-              }}>
-                <span style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: 0.5,
-                  textTransform: 'uppercase',
-                  color: colors.textSecondary,
-                }}>
-                  Recent Searches
-                </span>
-                {recentSearches.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={onClearRecentSearches}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      fontSize: 14,
-                      fontWeight: 500,
-                      color: colors.brandTeal,
-                      cursor: 'pointer',
-                      padding: 0,
-                    }}
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              {recentSearches.length === 0 ? (
+        {showPanel && (
+          <div
+            className="live-search-panel"
+            style={{
+              borderTop: `1px solid ${colors.borderLight}`,
+            }}
+          >
+            {showRecent && (
+              <div className="search-panel-view search-panel-view--visible">
                 <div style={{
-                  padding: '20px 14px 24px',
-                  textAlign: 'center',
-                  fontSize: 14,
-                  color: colors.textTertiary,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px 6px',
                 }}>
-                  No recent searches
-                </div>
-              ) : (
-                recentSearches.slice(0, 5).map(term => {
-                  const typeLabel = inferRecentSearchLabel(term);
-                  return (
+                  <span style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: 0.5,
+                    textTransform: 'uppercase',
+                    color: colors.textSecondary,
+                  }}>
+                    Recent Searches
+                  </span>
+                  {recentSearches.length > 0 && (
                     <button
-                      key={term}
                       type="button"
-                      onClick={() => onRecentSelect(term)}
-                      className="search-result-row"
+                      onPointerDown={e => e.preventDefault()}
+                      onClick={onClearRecentSearches}
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 12,
-                        width: '100%',
-                        textAlign: 'left',
-                        padding: '10px 14px',
                         background: 'none',
                         border: 'none',
+                        fontSize: 14,
+                        fontWeight: 500,
+                        color: colors.brandTeal,
                         cursor: 'pointer',
+                        padding: 0,
                       }}
                     >
-                      <History size={16} color={colors.textTertiary} style={{ flexShrink: 0 }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 15, color: colors.textPrimary, lineHeight: 1.3 }}>
-                          {term}
-                        </div>
-                        {typeLabel && (
-                          <div style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
-                            {typeLabel}
-                          </div>
-                        )}
-                      </div>
+                      Clear
                     </button>
-                  );
-                })
-              )}
-            </div>
-          )}
-          {showResults && (
-            <div className="search-panel-view search-panel-view--visible">
-              {panelContent}
-            </div>
-          )}
-        </div>
-      )}
+                  )}
+                </div>
+                {recentSearches.length === 0 ? (
+                  <div style={{
+                    padding: '20px 14px 24px',
+                    textAlign: 'center',
+                    fontSize: 14,
+                    color: colors.textTertiary,
+                  }}>
+                    No recent searches
+                  </div>
+                ) : (
+                  recentSearches.slice(0, 5).map(term => {
+                    const typeLabel = inferRecentSearchLabel(term);
+                    return (
+                      <button
+                        key={term}
+                        type="button"
+                        onPointerDown={e => e.preventDefault()}
+                        onClick={() => {
+                          onRecentSelect(term);
+                          inputRef.current?.focus();
+                        }}
+                        className="search-result-row"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '10px 14px',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <History size={16} color={colors.textTertiary} style={{ flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 15, color: colors.textPrimary, lineHeight: 1.3 }}>
+                            {term}
+                          </div>
+                          {typeLabel && (
+                            <div style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                              {typeLabel}
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            )}
+            {showResults && (
+              <div className="search-panel-view search-panel-view--visible">
+                {panelContent}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -40,9 +40,10 @@ function scoreItem<T>(config: ListConfig<T>, item: T, query: string): number {
 export function filterItems<T>(config: ListConfig<T>, items: T[], filters: FilterValues): T[] {
   return items.filter(item =>
     config.filterFields.every(field => {
-      const selected = filters[field.key];
-      if (!selected) return true;
-      return field.getValue(item) === selected;
+      const selected = filters[field.key] ?? [];
+      if (selected.length === 0) return true;
+      const value = field.getValue(item);
+      return value != null && selected.includes(value);
     }),
   );
 }
@@ -67,13 +68,13 @@ export function searchItems<T>(config: ListConfig<T>, items: T[], query: string)
 export function buildFilterChips<T>(config: ListConfig<T>, filters: FilterValues): ActiveFilterChip[] {
   const chips: ActiveFilterChip[] = [];
   for (const field of config.filterFields) {
-    const value = filters[field.key];
-    if (!value) continue;
-    chips.push({
-      id: `${field.key}:${value}`,
-      label: field.chipLabeled === false ? value : `${field.label}: ${value}`,
-      source: 'sheet',
-    });
+    for (const value of filters[field.key] ?? []) {
+      chips.push({
+        id: `${field.key}:${value}`,
+        label: field.chipLabeled === false ? value : `${field.label}: ${value}`,
+        source: 'sheet',
+      });
+    }
   }
   return chips;
 }
@@ -83,19 +84,38 @@ export function countFilters<T>(config: ListConfig<T>, filters: FilterValues): n
 }
 
 export function removeFilterChip(chipId: string, filters: FilterValues): FilterValues {
-  const key = chipId.split(':')[0];
+  const separator = chipId.indexOf(':');
+  if (separator === -1) return filters;
+  const key = chipId.slice(0, separator);
+  const value = chipId.slice(separator + 1);
   if (!(key in filters)) return filters;
-  return { ...filters, [key]: null };
+  return { ...filters, [key]: filters[key].filter(v => v !== value) };
 }
 
 export function emptyFilters<T>(config: ListConfig<T>): FilterValues {
   const filters: FilterValues = {};
-  for (const field of config.filterFields) filters[field.key] = null;
+  for (const field of config.filterFields) filters[field.key] = [];
   return filters;
 }
 
 export function cloneFilters(filters: FilterValues): FilterValues {
-  return { ...filters };
+  const cloned: FilterValues = {};
+  for (const [key, values] of Object.entries(filters)) cloned[key] = [...values];
+  return cloned;
+}
+
+export function normalizeFilters(raw: Record<string, unknown>): FilterValues {
+  const filters: FilterValues = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (Array.isArray(value)) {
+      filters[key] = value.filter((item): item is string => typeof item === 'string');
+    } else if (typeof value === 'string' && value) {
+      filters[key] = [value];
+    } else {
+      filters[key] = [];
+    }
+  }
+  return filters;
 }
 
 // ---------------------------------------------------------------------------
@@ -134,7 +154,7 @@ export function inferFilterSuggestions<T>(
   for (const field of config.filterFields) {
     // 1) Direct catalog match against the field's option list.
     const catalogMatch = bestCatalogMatch(field.options, q);
-    if (catalogMatch && catalogMatch.score >= 40 && filters[field.key] !== catalogMatch.value) {
+    if (catalogMatch && catalogMatch.score >= 40 && !filters[field.key]?.includes(catalogMatch.value)) {
       candidates.push({
         id: `suggest-${field.key}-${catalogMatch.value}`,
         filterKey: field.key,
@@ -148,7 +168,7 @@ export function inferFilterSuggestions<T>(
     const unanimous = unanimousValue(matched, field.getValue);
     if (
       unanimous
-      && filters[field.key] !== unanimous
+      && !filters[field.key]?.includes(unanimous)
       && field.options.includes(unanimous)
       && !candidates.some(c => c.filterKey === field.key && c.value === unanimous)
     ) {
@@ -168,5 +188,7 @@ export function inferFilterSuggestions<T>(
 }
 
 export function applyFilterSuggestion(filters: FilterValues, suggestion: FilterSuggestion): FilterValues {
-  return { ...filters, [suggestion.filterKey]: suggestion.value };
+  const current = filters[suggestion.filterKey] ?? [];
+  if (current.includes(suggestion.value)) return filters;
+  return { ...filters, [suggestion.filterKey]: [...current, suggestion.value] };
 }

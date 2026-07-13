@@ -1,4 +1,4 @@
-import { JOBS, SITES, PROJECTS, RECENTLY_VIEWED } from '../data/objects';
+import { JOBS, SITES, PROJECTS, RECENTLY_VIEWED, JOB_CONTRACTS } from '../data/objects';
 import type {
   Job, SearchResult, ObjectType,
   QuickFilterId, SheetFilters, ActiveFilterChip, JobStatus,
@@ -269,15 +269,17 @@ export function filterAndSearch(
 export function inferRecentSearchLabel(term: string): string | null {
   const t = term.trim();
   if (!t) return null;
+  const lower = t.toLowerCase();
 
-  if (JOBS.some(j => j.id.toLowerCase() === t.toLowerCase())) return 'Job';
-  if (JOBS.some(j => j.templateName.toLowerCase() === t.toLowerCase())) return 'Job';
-  if (SITES.some(s => s.name.toLowerCase() === t.toLowerCase())) return 'Site';
-  if (PROJECTS.some(p => p.id.toLowerCase() === t.toLowerCase())) return 'Project';
-  if (PROJECTS.some(p => p.templateName.toLowerCase() === t.toLowerCase())) return 'Project';
+  if (JOBS.some(j => j.id.toLowerCase() === lower)) return 'Job';
+  if (JOBS.some(j => j.templateName.toLowerCase() === lower)) return 'Job Template';
+  if (SITES.some(s => s.name.toLowerCase() === lower)) return 'Site';
+  if (PROJECTS.some(p => p.id.toLowerCase() === lower)) return 'Project';
+  if (PROJECTS.some(p => p.templateName.toLowerCase() === lower)) return 'Project';
+  if (JOB_CONTRACTS.some(c => c.toLowerCase() === lower)) return 'Contract';
   if (/^j-\d/i.test(t)) return 'Job';
   if (/^p-\d/i.test(t)) return 'Project';
-  if (SITES.some(s => s.name.toLowerCase().includes(t.toLowerCase()))) return 'Site';
+  if (SITES.some(s => s.name.toLowerCase().includes(lower))) return 'Site';
 
   return null;
 }

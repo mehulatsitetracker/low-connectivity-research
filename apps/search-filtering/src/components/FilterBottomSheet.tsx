@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronLeft, ChevronRight, Search, Star } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { colors, radii } from '../theme';
 import { HighlightedText } from './HighlightedText';
 import { emptyFilters } from '../utils/listEngine';
@@ -31,8 +31,6 @@ function Section({
       <div style={{
         fontSize: 11,
         fontWeight: 700,
-        letterSpacing: 0.5,
-        textTransform: 'uppercase',
         color: selected ? colors.brandTeal : colors.textSecondary,
         marginBottom: 6,
       }}>
@@ -43,12 +41,65 @@ function Section({
   );
 }
 
+function FilterChecklistRow({
+  label, query, checked, onToggle,
+}: {
+  label: string;
+  query: string;
+  checked: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      onClick={onToggle}
+      className="filter-checklist-row"
+      style={{
+        width: '100%',
+        textAlign: 'left',
+        padding: '12px 16px',
+        background: checked ? colors.brandTealLight : 'none',
+        border: 'none',
+        borderBottom: `1px solid ${colors.borderLight}`,
+        fontSize: 15,
+        color: colors.textPrimary,
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+      }}
+    >
+      <span
+        aria-hidden="true"
+        style={{
+          flexShrink: 0,
+          width: 20,
+          height: 20,
+          borderRadius: 4,
+          border: `2px solid ${checked ? colors.brandTeal : colors.border}`,
+          background: checked ? colors.brandTeal : colors.surface,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {checked && <Check size={14} color="#fff" strokeWidth={3} />}
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <HighlightedText text={label} query={query} />
+      </span>
+    </button>
+  );
+}
+
 function FilterSearchPicker({
-  options, selected, onSelect, onClose, searchPlaceholder, emptyMessage, initialQuery = '',
+  options, selected, onChange, onClose, searchPlaceholder, emptyMessage, initialQuery = '',
 }: {
   options: readonly string[];
-  selected: string | null;
-  onSelect: (value: string | null) => void;
+  selected: string[];
+  onChange: (values: string[]) => void;
   onClose: () => void;
   searchPlaceholder: string;
   emptyMessage: string;
@@ -121,24 +172,21 @@ function FilterSearchPicker({
           </div>
         ) : (
           filteredOptions.map(option => {
-            const isSelected = option === selected;
+            const isSelected = selected.includes(option);
             return (
-            <button
-              key={option}
-              type="button"
-              onClick={() => onSelect(isSelected ? null : option)}
-              className="search-result-row"
-              style={{
-                width: '100%', textAlign: 'left', padding: '14px 16px',
-                background: isSelected ? colors.brandTealLight : 'none',
-                border: 'none', borderBottom: `1px solid ${colors.borderLight}`,
-                fontSize: 15, color: colors.textPrimary, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              }}
-            >
-              <HighlightedText text={option} query={query} />
-              {isSelected && <Check size={18} color={colors.brandTeal} />}
-            </button>
+              <FilterChecklistRow
+                key={option}
+                label={option}
+                query={query}
+                checked={isSelected}
+                onToggle={() => {
+                  onChange(
+                    isSelected
+                      ? selected.filter(value => value !== option)
+                      : [...selected, option],
+                  );
+                }}
+              />
             );
           })
         )}
@@ -148,55 +196,131 @@ function FilterSearchPicker({
 }
 
 function FilterTriggerField({
-  selected, placeholder, onOpen, highlightQuery,
+  selected, placeholder, onOpen, onRemove, highlightQuery,
 }: {
-  selected: string | null;
+  selected: string[];
   placeholder: string;
   onOpen: () => void;
+  onRemove: (value: string) => void;
   highlightQuery: string;
 }) {
-  const hasValue = Boolean(selected);
+  const hasValue = selected.length > 0;
+
+  const chipStyle = {
+    flexShrink: 0,
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 4,
+    padding: '2px 6px 2px 8px',
+    borderRadius: radii.pill,
+    fontSize: 13,
+    fontWeight: 500,
+    border: `1px solid ${colors.brandTeal}`,
+    background: colors.brandTealLight,
+    color: colors.brandTeal,
+  } as const;
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={e => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onOpen();
-        }
-      }}
       style={{
         width: '100%',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 12,
-        padding: '10px 12px',
+        gap: 8,
+        padding: hasValue ? '6px 4px 6px 8px' : '4px 4px 4px 12px',
         borderRadius: radii.input,
         background: colors.surface,
-        border: hasValue ? `1px solid ${colors.brandTeal}` : `1px solid ${colors.border}`,
-        cursor: 'pointer',
+        border: `1px solid ${colors.border}`,
+        minHeight: 39,
       }}
     >
-      <span style={{
-        flex: 1,
-        minWidth: 0,
-        fontSize: 15,
-        fontWeight: hasValue ? 600 : 400,
-        color: hasValue ? colors.textPrimary : colors.textTertiary,
-      }}>
-        {hasValue
-          ? <HighlightedText text={selected!} query={highlightQuery} />
-          : placeholder}
-      </span>
-      <ChevronRight
-        size={16}
-        color={hasValue ? colors.brandTeal : colors.textTertiary}
-        style={{ flexShrink: 0 }}
-      />
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onOpen}
+        onKeyDown={e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onOpen();
+          }
+        }}
+        style={{
+          flex: 1,
+          minWidth: 0,
+          padding: 0,
+          border: 'none',
+          background: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+          display: 'flex',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 6,
+        }}
+      >
+        {hasValue ? (
+          selected.map(value => (
+            <span
+              key={value}
+              style={chipStyle}
+              onClick={e => e.stopPropagation()}
+              onKeyDown={e => e.stopPropagation()}
+            >
+              <HighlightedText text={value} query={highlightQuery} />
+              <button
+                type="button"
+                aria-label={`Remove ${value}`}
+                onClick={e => {
+                  e.stopPropagation();
+                  onRemove(value);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 0,
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
+                  color: colors.brandTeal,
+                  lineHeight: 0,
+                }}
+              >
+                <X size={12} strokeWidth={2.5} />
+              </button>
+            </span>
+          ))
+        ) : (
+          <span style={{
+            fontSize: 15,
+            fontWeight: 400,
+            color: colors.textTertiary,
+            padding: '6px 4px',
+          }}>
+            {placeholder}
+          </span>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={hasValue ? 'Change selection' : placeholder}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          padding: 6,
+          border: 'none',
+          background: 'none',
+          cursor: 'pointer',
+        }}
+      >
+        <ChevronRight
+          size={16}
+          color={hasValue ? colors.brandTeal : colors.textTertiary}
+        />
+      </button>
     </div>
   );
 }
@@ -211,76 +335,60 @@ export function FilterBottomSheet<T>({
   activeFilterCount = 0,
   highlightQuery = '',
 }: FilterBottomSheetProps<T>) {
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const dragStartY = useRef<number | null>(null);
   const [openPicker, setOpenPicker] = useState<string | null>(null);
-  const showSaveFooter = activeFilterCount > 0 && !openPicker && onSaveFilter;
+  const showFooter = !openPicker;
+  const hasActiveFilters = activeFilterCount > 0;
 
   if (!open) return null;
-
-  const handlePointerDown = (e: React.PointerEvent) => {
-    dragStartY.current = e.clientY;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (dragStartY.current === null || !sheetRef.current) return;
-    const delta = e.clientY - dragStartY.current;
-    if (delta > 0) sheetRef.current.style.transform = `translateY(${delta}px)`;
-  };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    if (dragStartY.current === null || !sheetRef.current) return;
-    const delta = e.clientY - dragStartY.current;
-    sheetRef.current.style.transform = '';
-    dragStartY.current = null;
-    if (delta > 80) onClose();
-  };
 
   const activePickerField = config.filterFields.find(f => f.key === openPicker) ?? null;
 
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 100 }}>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: colors.overlay }} />
-      <div
-        ref={sheetRef}
-        style={{
-          position: 'absolute', left: 0, right: 0, bottom: 0, width: '100%',
-          maxHeight: '75%', background: colors.surface,
-          borderRadius: `${radii.modal}px ${radii.modal}px 0 0`,
-          zIndex: 1, display: 'flex', flexDirection: 'column',
-          animation: 'sheet-slide-up 0.25s ease-out',
-        }}
-      >
-        <div
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          style={{ padding: '8px 0 2px', display: 'flex', justifyContent: 'center', cursor: 'grab', touchAction: 'none' }}
-        >
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: colors.border }} />
-        </div>
-
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        zIndex: 100,
+        display: 'flex',
+        flexDirection: 'column',
+        background: colors.surface,
+        animation: 'sheet-slide-up 0.25s ease-out',
+      }}
+    >
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '8px 16px 12px', borderBottom: `1px solid ${colors.borderLight}`,
+          padding: '12px 16px', borderBottom: `1px solid ${colors.borderLight}`,
+          flexShrink: 0,
         }}>
           <span style={{ fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>Filters</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <button
-              type="button"
-              onClick={() => onChange(emptyFilters(config))}
-              style={{ background: 'none', border: 'none', fontSize: 15, fontWeight: 500, color: colors.textSecondary, cursor: 'pointer' }}
-            >
-              Clear all
-            </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {activeFilterCount > 0 && onSaveFilter && (
+              <button
+                type="button"
+                onClick={onSaveFilter}
+                style={{ background: 'none', border: 'none', fontSize: 15, fontWeight: 600, color: colors.brandTeal, cursor: 'pointer' }}
+              >
+                Save Filter
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}
-              style={{ background: 'none', border: 'none', fontSize: 15, fontWeight: 600, color: colors.brandTeal, cursor: 'pointer' }}
+              aria-label="Close filters"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                border: 'none',
+                background: colors.surfaceAlt,
+                cursor: 'pointer',
+                padding: 0,
+              }}
             >
-              Done
+              <X size={18} strokeWidth={2.5} color={colors.textSecondary} />
             </button>
           </div>
         </div>
@@ -294,13 +402,17 @@ export function FilterBottomSheet<T>({
             overflowX: 'hidden',
           }}>
             {config.filterFields.map(field => {
-              const value = filters[field.key] ?? null;
+              const values = filters[field.key] ?? [];
               return (
-                <Section key={field.key} title={field.label} selected={Boolean(value)}>
+                <Section key={field.key} title={field.label} selected={values.length > 0}>
                   <FilterTriggerField
-                    selected={value}
+                    selected={values}
                     placeholder={field.placeholder}
                     onOpen={() => setOpenPicker(field.key)}
+                    onRemove={value => onChange({
+                      ...filters,
+                      [field.key]: values.filter(v => v !== value),
+                    })}
                     highlightQuery={highlightQuery}
                   />
                 </Section>
@@ -310,52 +422,69 @@ export function FilterBottomSheet<T>({
             {activePickerField && (
               <FilterSearchPicker
                 options={activePickerField.options}
-                selected={filters[activePickerField.key] ?? null}
+                selected={filters[activePickerField.key] ?? []}
                 initialQuery={highlightQuery}
                 searchPlaceholder={activePickerField.searchPlaceholder}
                 emptyMessage={activePickerField.emptyMessage}
-                onSelect={value => {
-                  onChange({ ...filters, [activePickerField.key]: value });
-                  setOpenPicker(null);
-                }}
+                onChange={values => onChange({ ...filters, [activePickerField.key]: values })}
                 onClose={() => setOpenPicker(null)}
               />
             )}
           </div>
         </div>
 
-        {showSaveFooter && (
+        {showFooter && (
           <div style={{
             flexShrink: 0,
             padding: '12px 16px 16px',
             borderTop: `1px solid ${colors.borderLight}`,
             background: colors.surface,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'stretch',
+            gap: 12,
           }}>
             <button
               type="button"
-              onClick={onSaveFilter}
+              disabled={!hasActiveFilters}
+              onClick={onClose}
               style={{
                 width: '100%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 8,
                 padding: '12px 16px',
                 borderRadius: radii.pill,
                 border: 'none',
-                background: colors.brandTeal,
+                background: hasActiveFilters ? colors.brandTeal : colors.border,
                 color: '#fff',
                 fontSize: 15,
                 fontWeight: 600,
-                cursor: 'pointer',
+                cursor: hasActiveFilters ? 'pointer' : 'default',
               }}
             >
-              <Star size={16} fill="#fff" />
-              Save Filter
+              {hasActiveFilters ? `(${activeFilterCount}) ` : ''}Filter anwenden
+            </button>
+            <button
+              type="button"
+              disabled={!hasActiveFilters}
+              onClick={() => onChange(emptyFilters(config))}
+              style={{
+                width: '100%',
+                padding: '4px 0',
+                border: 'none',
+                background: 'none',
+                color: hasActiveFilters ? colors.brandTeal : colors.textTertiary,
+                fontSize: 15,
+                fontWeight: 600,
+                cursor: hasActiveFilters ? 'pointer' : 'default',
+                textAlign: 'center',
+              }}
+            >
+              Alles löschen
             </button>
           </div>
         )}
-      </div>
     </div>
   );
 }

@@ -118,3 +118,13 @@ input[type="search"]::-webkit-search-results-decoration {
     background: #F7F8F7;
   }
 }
+
+.filter-checklist-row:active:not([aria-checked="true"]) {
+  background: #F0F0F0;
+}
+
+@media (hover: hover) {
+  .filter-checklist-row:hover:not([aria-checked="true"]) {
+    background: #F7F8F7;
+  }
+}

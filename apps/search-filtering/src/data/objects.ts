@@ -132,8 +132,8 @@ export const RECENT_SEARCHES = [
   'J-004892',
   'Pine Valley Tower',
   'Equipment Install',
-  'P-000008',
   '100 Pearl Street',
+  'Ericsson',
 ];
 
 export const RECENTLY_VIEWED: SearchResult[] = [

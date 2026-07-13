@@ -75,7 +75,7 @@ export interface Project {
 }
 
 /** Generic filter map used by the config-driven list engine. Keys are filter field ids. */
-export type FilterValues = Record<string, string | null>;
+export type FilterValues = Record<string, string[]>;
 
 /** A saved filter for any object type (jobs, sites, projects). */
 export interface SavedFilter {
