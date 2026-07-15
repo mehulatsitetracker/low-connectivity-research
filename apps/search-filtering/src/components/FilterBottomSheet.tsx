@@ -14,13 +14,7 @@ interface FilterBottomSheetProps<T> {
   onClose: () => void;
   onSaveFilter?: () => void;
   activeFilterCount?: number;
-  resultCount?: number;
   highlightQuery?: string;
-}
-
-function formatResultCount(count: number): string {
-  const label = count === 1 ? 'result' : 'results';
-  return `Found (${count}) ${label}`;
 }
 
 function FilterChecklistRow({
@@ -361,7 +355,6 @@ export function FilterBottomSheet<T>({
   onClose,
   onSaveFilter,
   activeFilterCount = 0,
-  resultCount,
   highlightQuery = '',
 }: FilterBottomSheetProps<T>) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
@@ -460,16 +453,6 @@ export function FilterBottomSheet<T>({
         alignItems: 'stretch',
         gap: 12,
       }}>
-        {resultCount !== undefined && (
-          <div style={{
-            fontSize: 13,
-            fontWeight: 500,
-            color: colors.textSecondary,
-            textAlign: 'center',
-          }}>
-            {formatResultCount(resultCount)}
-          </div>
-        )}
         <button
           type="button"
           disabled={!hasActiveFilters}
