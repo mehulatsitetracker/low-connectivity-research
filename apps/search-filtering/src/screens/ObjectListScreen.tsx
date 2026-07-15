@@ -282,6 +282,7 @@ export function ObjectListScreen<T>({ config, activeTab, onAction }: ObjectListS
         onClose={() => setSheetOpen(false)}
         onSaveFilter={handleOpenSaveModal}
         activeFilterCount={activeFilterCount}
+        resultCount={visibleItems.length}
         highlightQuery={debouncedQuery}
       />
 

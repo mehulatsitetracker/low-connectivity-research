@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { Check, Search, X } from 'lucide-react';
 import { colors, radii } from '../theme';
 import { HighlightedText } from './HighlightedText';
 import { emptyFilters } from '../utils/listEngine';
@@ -14,31 +14,13 @@ interface FilterBottomSheetProps<T> {
   onClose: () => void;
   onSaveFilter?: () => void;
   activeFilterCount?: number;
+  resultCount?: number;
   highlightQuery?: string;
 }
 
-function Section({
-  title,
-  children,
-  selected,
-}: {
-  title: string;
-  children: React.ReactNode;
-  selected?: boolean;
-}) {
-  return (
-    <div style={{ marginBottom: 10, padding: '0 2px' }}>
-      <div style={{
-        fontSize: 11,
-        fontWeight: 700,
-        color: selected ? colors.brandTeal : colors.textSecondary,
-        marginBottom: 6,
-      }}>
-        {title}
-      </div>
-      {children}
-    </div>
-  );
+function formatResultCount(count: number): string {
+  const label = count === 1 ? 'result' : 'results';
+  return `Found (${count}) ${label}`;
 }
 
 function FilterChecklistRow({
@@ -94,33 +76,43 @@ function FilterChecklistRow({
   );
 }
 
-function FilterSearchPicker({
-  options, selected, onChange, onClose, searchPlaceholder, emptyMessage, initialQuery = '',
+function FilterAccordionField({
+  label,
+  options,
+  selected,
+  placeholder,
+  searchPlaceholder,
+  emptyMessage,
+  highlightQuery,
+  expanded,
+  onToggle,
+  onChange,
+  showDivider,
 }: {
+  label: string;
   options: readonly string[];
   selected: string[];
-  onChange: (values: string[]) => void;
-  onClose: () => void;
+  placeholder: string;
   searchPlaceholder: string;
   emptyMessage: string;
-  initialQuery?: string;
+  highlightQuery: string;
+  expanded: boolean;
+  onToggle: () => void;
+  onChange: (values: string[]) => void;
+  showDivider: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState(initialQuery);
-  const [exiting, setExiting] = useState(false);
+  const [query, setQuery] = useState('');
+  const hasValue = selected.length > 0;
 
   useEffect(() => {
+    if (!expanded) {
+      setQuery('');
+      return;
+    }
     const timer = requestAnimationFrame(() => inputRef.current?.focus());
     return () => cancelAnimationFrame(timer);
-  }, []);
-
-  const handleBack = () => {
-    setExiting(true);
-  };
-
-  const handleAnimationEnd = () => {
-    if (exiting) onClose();
-  };
+  }, [expanded]);
 
   const filteredOptions = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -129,198 +121,234 @@ function FilterSearchPicker({
   }, [options, query]);
 
   return (
-    <div
-      className={exiting ? 'filter-picker-slide-out' : 'filter-picker-slide-in'}
-      onAnimationEnd={handleAnimationEnd}
-      style={{
-        position: 'absolute', inset: 0, zIndex: 10, display: 'flex', flexDirection: 'column',
-        background: colors.surface,
-      }}
-    >
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px 12px',
-        borderBottom: `1px solid ${colors.borderLight}`, flexShrink: 0,
-      }}>
-        <button
-          type="button"
-          onClick={handleBack}
-          aria-label="Back to filters"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', flexShrink: 0 }}
+    <div>
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={onToggle}
+        className="filter-lookup-row"
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          padding: hasValue ? '16px 20px 10px' : '16px 20px',
+          border: 'none',
+          background: colors.surface,
+          cursor: 'pointer',
+          textAlign: 'left',
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: 13,
+            fontWeight: 400,
+            color: colors.textPrimary,
+            marginBottom: hasValue ? 0 : 6,
+            lineHeight: 1.2,
+          }}>
+            {hasValue ? `${label} (${selected.length})` : label}
+          </div>
+          {!hasValue && (
+            <div style={{
+              fontSize: 16,
+              fontWeight: 400,
+              color: colors.textTertiary,
+              lineHeight: 1.3,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
+              {placeholder}
+            </div>
+          )}
+        </div>
+        <span
+          aria-hidden="true"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            color: colors.textPrimary,
+          }}
         >
-          <ChevronLeft size={22} color={colors.brandTeal} />
-        </button>
+          {expanded ? (
+            <X size={20} strokeWidth={1.75} />
+          ) : (
+            <Search size={20} strokeWidth={1.75} />
+          )}
+        </span>
+      </button>
+
+      {hasValue && (
         <div style={{
-          flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
-          border: `1px solid ${colors.border}`, borderRadius: radii.input, background: colors.surface,
+          display: 'flex',
+          flexWrap: 'nowrap',
+          gap: 8,
+          padding: '0 20px 14px',
+          background: colors.surface,
+          overflow: 'hidden',
         }}>
-          <Search size={16} color={colors.textTertiary} style={{ flexShrink: 0 }} />
-          <input
-            ref={inputRef}
-            type="search"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder={searchPlaceholder}
-            style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15, color: colors.textPrimary, background: 'transparent', minWidth: 0, padding: 0 }}
-          />
+          {selected.slice(0, 2).map(value => (
+            <button
+              key={value}
+              type="button"
+              aria-label={`Remove ${value}`}
+              onClick={() => onChange(selected.filter(item => item !== value))}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                maxWidth: selected.length > 2 ? '42%' : '100%',
+                minWidth: 0,
+                padding: '5px 10px 5px 12px',
+                borderRadius: radii.pill,
+                fontSize: 13,
+                fontWeight: 500,
+                border: `1px solid ${colors.brandTeal}`,
+                background: colors.brandTealLight,
+                color: colors.brandTeal,
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                minWidth: 0,
+              }}>
+                <HighlightedText text={value} query={highlightQuery} />
+              </span>
+              <X size={14} strokeWidth={2.5} style={{ flexShrink: 0 }} />
+            </button>
+          ))}
+          {selected.length > 2 && (
+            <button
+              type="button"
+              aria-label={`Show ${selected.length - 2} more selected`}
+              onClick={onToggle}
+              style={{
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                padding: '5px 10px',
+                borderRadius: radii.pill,
+                fontSize: 13,
+                fontWeight: 500,
+                border: `1px solid ${colors.brandTeal}`,
+                background: colors.brandTealLight,
+                color: colors.brandTeal,
+                cursor: 'pointer',
+              }}
+            >
+              +{selected.length - 2}
+            </button>
+          )}
+        </div>
+      )}
+
+      <div
+        className={expanded ? 'filter-accordion-panel filter-accordion-panel--open' : 'filter-accordion-panel'}
+        style={{
+          display: 'grid',
+          gridTemplateRows: expanded ? '1fr' : '0fr',
+          transition: 'grid-template-rows 0.2s ease',
+        }}
+      >
+        <div style={{ overflow: 'hidden', minHeight: 0 }}>
+          <div style={{ background: colors.surface }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              margin: '0 20px 8px',
+              padding: '8px 12px',
+              border: `1px solid ${colors.border}`,
+              borderRadius: radii.input,
+              background: colors.surface,
+            }}>
+              <Search size={16} color={colors.textTertiary} style={{ flexShrink: 0 }} />
+              <input
+                ref={inputRef}
+                type="search"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder={searchPlaceholder}
+                onClick={e => e.stopPropagation()}
+                style={{
+                  flex: 1,
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: 15,
+                  color: colors.textPrimary,
+                  background: 'transparent',
+                  minWidth: 0,
+                  padding: 0,
+                }}
+              />
+              {query.length > 0 && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={e => {
+                    e.stopPropagation();
+                    setQuery('');
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 0,
+                    border: 'none',
+                    background: 'none',
+                    cursor: 'pointer',
+                    color: colors.textTertiary,
+                  }}
+                >
+                  <X size={14} strokeWidth={2.5} />
+                </button>
+              )}
+            </div>
+
+            <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+              {filteredOptions.length === 0 ? (
+                <div style={{
+                  padding: '24px 16px',
+                  textAlign: 'center',
+                  fontSize: 14,
+                  color: colors.textTertiary,
+                }}>
+                  {emptyMessage}
+                </div>
+              ) : (
+                filteredOptions.map(option => {
+                  const isSelected = selected.includes(option);
+                  return (
+                    <FilterChecklistRow
+                      key={option}
+                      label={option}
+                      query={query}
+                      checked={isSelected}
+                      onToggle={() => {
+                        onChange(
+                          isSelected
+                            ? selected.filter(value => value !== option)
+                            : [...selected, option],
+                        );
+                      }}
+                    />
+                  );
+                })
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        {filteredOptions.length === 0 ? (
-          <div style={{ padding: '32px 16px', textAlign: 'center', fontSize: 14, color: colors.textTertiary }}>
-            {emptyMessage}
-          </div>
-        ) : (
-          filteredOptions.map(option => {
-            const isSelected = selected.includes(option);
-            return (
-              <FilterChecklistRow
-                key={option}
-                label={option}
-                query={query}
-                checked={isSelected}
-                onToggle={() => {
-                  onChange(
-                    isSelected
-                      ? selected.filter(value => value !== option)
-                      : [...selected, option],
-                  );
-                }}
-              />
-            );
-          })
-        )}
-      </div>
-    </div>
-  );
-}
-
-function FilterTriggerField({
-  selected, placeholder, onOpen, onRemove, highlightQuery,
-}: {
-  selected: string[];
-  placeholder: string;
-  onOpen: () => void;
-  onRemove: (value: string) => void;
-  highlightQuery: string;
-}) {
-  const hasValue = selected.length > 0;
-
-  const chipStyle = {
-    flexShrink: 0,
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 4,
-    padding: '2px 6px 2px 8px',
-    borderRadius: radii.pill,
-    fontSize: 13,
-    fontWeight: 500,
-    border: `1px solid ${colors.brandTeal}`,
-    background: colors.brandTealLight,
-    color: colors.brandTeal,
-  } as const;
-
-  return (
-    <div
-      style={{
-        width: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        padding: hasValue ? '6px 4px 6px 8px' : '4px 4px 4px 12px',
-        borderRadius: radii.input,
-        background: colors.surface,
-        border: `1px solid ${colors.border}`,
-        minHeight: 39,
-      }}
-    >
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={onOpen}
-        onKeyDown={e => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onOpen();
-          }
-        }}
-        style={{
-          flex: 1,
-          minWidth: 0,
-          padding: 0,
-          border: 'none',
-          background: 'none',
-          cursor: 'pointer',
-          textAlign: 'left',
-          display: 'flex',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 6,
-        }}
-      >
-        {hasValue ? (
-          selected.map(value => (
-            <span
-              key={value}
-              style={chipStyle}
-              onClick={e => e.stopPropagation()}
-              onKeyDown={e => e.stopPropagation()}
-            >
-              <HighlightedText text={value} query={highlightQuery} />
-              <button
-                type="button"
-                aria-label={`Remove ${value}`}
-                onClick={e => {
-                  e.stopPropagation();
-                  onRemove(value);
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: 0,
-                  border: 'none',
-                  background: 'none',
-                  cursor: 'pointer',
-                  color: colors.brandTeal,
-                  lineHeight: 0,
-                }}
-              >
-                <X size={12} strokeWidth={2.5} />
-              </button>
-            </span>
-          ))
-        ) : (
-          <span style={{
-            fontSize: 15,
-            fontWeight: 400,
-            color: colors.textTertiary,
-            padding: '6px 4px',
-          }}>
-            {placeholder}
-          </span>
-        )}
-      </div>
-      <button
-        type="button"
-        onClick={onOpen}
-        aria-label={hasValue ? 'Change selection' : placeholder}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          padding: 6,
-          border: 'none',
-          background: 'none',
-          cursor: 'pointer',
-        }}
-      >
-        <ChevronRight
-          size={16}
-          color={hasValue ? colors.brandTeal : colors.textTertiary}
-        />
-      </button>
+      {showDivider && (
+        <div style={{ height: 1, background: colors.border, margin: '0 0' }} />
+      )}
     </div>
   );
 }
@@ -333,15 +361,17 @@ export function FilterBottomSheet<T>({
   onClose,
   onSaveFilter,
   activeFilterCount = 0,
+  resultCount,
   highlightQuery = '',
 }: FilterBottomSheetProps<T>) {
-  const [openPicker, setOpenPicker] = useState<string | null>(null);
-  const showFooter = !openPicker;
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const hasActiveFilters = activeFilterCount > 0;
 
-  if (!open) return null;
+  useEffect(() => {
+    if (!open) setExpandedKey(null);
+  }, [open]);
 
-  const activePickerField = config.filterFields.find(f => f.key === openPicker) ?? null;
+  if (!open) return null;
 
   return (
     <div
@@ -355,136 +385,134 @@ export function FilterBottomSheet<T>({
         animation: 'sheet-slide-up 0.25s ease-out',
       }}
     >
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 16px', borderBottom: `1px solid ${colors.borderLight}`,
-          flexShrink: 0,
-        }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>Filters</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {activeFilterCount > 0 && onSaveFilter && (
-              <button
-                type="button"
-                onClick={onSaveFilter}
-                style={{ background: 'none', border: 'none', fontSize: 15, fontWeight: 600, color: colors.brandTeal, cursor: 'pointer' }}
-              >
-                Save Filter
-              </button>
-            )}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '12px 16px', borderBottom: `1px solid ${colors.borderLight}`,
+        flexShrink: 0,
+      }}>
+        <span style={{ fontSize: 16, fontWeight: 700, color: colors.textPrimary }}>Filters</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {activeFilterCount > 0 && onSaveFilter && (
             <button
               type="button"
-              onClick={onClose}
-              aria-label="Close filters"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                border: 'none',
-                background: colors.surfaceAlt,
-                cursor: 'pointer',
-                padding: 0,
-              }}
+              onClick={onSaveFilter}
+              style={{ background: 'none', border: 'none', fontSize: 15, fontWeight: 600, color: colors.brandTeal, cursor: 'pointer' }}
             >
-              <X size={18} strokeWidth={2.5} color={colors.textSecondary} />
+              Save Filter
             </button>
-          </div>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close filters"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              border: 'none',
+              background: colors.surfaceAlt,
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            <X size={18} strokeWidth={2.5} color={colors.textSecondary} />
+          </button>
         </div>
+      </div>
 
-        <div style={{ flex: 1, overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        background: colors.surface,
+        borderTop: `1px solid ${colors.border}`,
+      }}>
+        {config.filterFields.map((field, index) => {
+          const values = filters[field.key] ?? [];
+          return (
+            <FilterAccordionField
+              key={field.key}
+              label={field.label}
+              options={field.options}
+              selected={values}
+              placeholder={field.placeholder}
+              searchPlaceholder={field.searchPlaceholder}
+              emptyMessage={field.emptyMessage}
+              highlightQuery={highlightQuery}
+              expanded={expandedKey === field.key}
+              onToggle={() => setExpandedKey(prev => (prev === field.key ? null : field.key))}
+              onChange={next => onChange({ ...filters, [field.key]: next })}
+              showDivider={index < config.filterFields.length - 1}
+            />
+          );
+        })}
+      </div>
+
+      <div style={{
+        flexShrink: 0,
+        padding: '12px 16px 16px',
+        borderTop: `1px solid ${colors.borderLight}`,
+        background: colors.surface,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'stretch',
+        gap: 12,
+      }}>
+        {resultCount !== undefined && (
           <div style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '12px 16px 16px',
-            position: 'relative',
-            overflowX: 'hidden',
+            fontSize: 13,
+            fontWeight: 500,
+            color: colors.textSecondary,
+            textAlign: 'center',
           }}>
-            {config.filterFields.map(field => {
-              const values = filters[field.key] ?? [];
-              return (
-                <Section key={field.key} title={field.label} selected={values.length > 0}>
-                  <FilterTriggerField
-                    selected={values}
-                    placeholder={field.placeholder}
-                    onOpen={() => setOpenPicker(field.key)}
-                    onRemove={value => onChange({
-                      ...filters,
-                      [field.key]: values.filter(v => v !== value),
-                    })}
-                    highlightQuery={highlightQuery}
-                  />
-                </Section>
-              );
-            })}
-
-            {activePickerField && (
-              <FilterSearchPicker
-                options={activePickerField.options}
-                selected={filters[activePickerField.key] ?? []}
-                initialQuery={highlightQuery}
-                searchPlaceholder={activePickerField.searchPlaceholder}
-                emptyMessage={activePickerField.emptyMessage}
-                onChange={values => onChange({ ...filters, [activePickerField.key]: values })}
-                onClose={() => setOpenPicker(null)}
-              />
-            )}
-          </div>
-        </div>
-
-        {showFooter && (
-          <div style={{
-            flexShrink: 0,
-            padding: '12px 16px 16px',
-            borderTop: `1px solid ${colors.borderLight}`,
-            background: colors.surface,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'stretch',
-            gap: 12,
-          }}>
-            <button
-              type="button"
-              disabled={!hasActiveFilters}
-              onClick={onClose}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '12px 16px',
-                borderRadius: radii.pill,
-                border: 'none',
-                background: hasActiveFilters ? colors.brandTeal : colors.border,
-                color: '#fff',
-                fontSize: 15,
-                fontWeight: 600,
-                cursor: hasActiveFilters ? 'pointer' : 'default',
-              }}
-            >
-              {hasActiveFilters ? `(${activeFilterCount}) ` : ''}Filter anwenden
-            </button>
-            <button
-              type="button"
-              disabled={!hasActiveFilters}
-              onClick={() => onChange(emptyFilters(config))}
-              style={{
-                width: '100%',
-                padding: '4px 0',
-                border: 'none',
-                background: 'none',
-                color: hasActiveFilters ? colors.brandTeal : colors.textTertiary,
-                fontSize: 15,
-                fontWeight: 600,
-                cursor: hasActiveFilters ? 'pointer' : 'default',
-                textAlign: 'center',
-              }}
-            >
-              Alles löschen
-            </button>
+            {formatResultCount(resultCount)}
           </div>
         )}
+        <button
+          type="button"
+          disabled={!hasActiveFilters}
+          onClick={onClose}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '12px 16px',
+            borderRadius: radii.pill,
+            border: 'none',
+            background: hasActiveFilters ? colors.brandTeal : colors.border,
+            color: '#fff',
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: hasActiveFilters ? 'pointer' : 'default',
+          }}
+        >
+          {hasActiveFilters ? `(${activeFilterCount}) ` : ''}Apply Filter
+        </button>
+        <button
+          type="button"
+          disabled={!hasActiveFilters}
+          onClick={() => {
+            onChange(emptyFilters(config));
+            setExpandedKey(null);
+          }}
+          style={{
+            width: '100%',
+            padding: '4px 0',
+            border: 'none',
+            background: 'none',
+            color: hasActiveFilters ? colors.brandTeal : colors.textTertiary,
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: hasActiveFilters ? 'pointer' : 'default',
+            textAlign: 'center',
+          }}
+        >
+          Clear All
+        </button>
+      </div>
     </div>
   );
 }

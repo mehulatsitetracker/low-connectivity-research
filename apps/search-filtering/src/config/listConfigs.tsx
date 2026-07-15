@@ -22,6 +22,8 @@ export interface FilterFieldDef<T> {
   options: readonly string[];
   /** When false, chips show the raw value with no "Label:" prefix (used for status). */
   chipLabeled?: boolean;
+  /** Lookup (search icon + teal value) vs picklist (caret + black value). Defaults to lookup. */
+  control?: 'lookup' | 'picklist';
 }
 
 export interface CardMeta {
@@ -74,7 +76,7 @@ export const JOBS_CONFIG: ListConfig<Job> = {
     job.contract, job.gtr, ...(job.assignee ? [job.assignee] : []),
   ],
   filterFields: [
-    { key: 'status', label: 'Status', placeholder: 'Select status', searchPlaceholder: 'Search Status', emptyMessage: 'No matching statuses found.', getValue: j => j.status, options: JOB_LIST_STATUS_OPTIONS, chipLabeled: false },
+    { key: 'status', label: 'Job Status', placeholder: 'Select status', searchPlaceholder: 'Search Status', emptyMessage: 'No matching statuses found.', getValue: j => j.status, options: JOB_LIST_STATUS_OPTIONS, chipLabeled: false, control: 'picklist' },
     { key: 'site', label: 'Site', placeholder: 'Select site', searchPlaceholder: 'Search Site', emptyMessage: 'No matching sites found.', getValue: j => j.siteName, options: ASSIGNABLE_SITE_NAMES },
     { key: 'template', label: 'Job Template', placeholder: 'Select job template', searchPlaceholder: 'Search Job Template', emptyMessage: 'No matching job templates found.', getValue: j => j.templateName, options: JOB_TEMPLATES },
     { key: 'contract', label: 'Contract', placeholder: 'Select contract', searchPlaceholder: 'Search Contract', emptyMessage: 'No matching contracts found.', getValue: j => j.contract, options: JOB_CONTRACTS },
@@ -114,7 +116,7 @@ export const SITES_CONFIG: ListConfig<Site> = {
     site.name, site.county, site.city, site.region, site.status, site.type, site.carrier,
   ],
   filterFields: [
-    { key: 'status', label: 'Site Status', placeholder: 'Select status', searchPlaceholder: 'Search Status', emptyMessage: 'No matching statuses found.', getValue: s => s.status, options: SITE_STATUSES, chipLabeled: false },
+    { key: 'status', label: 'Site Status', placeholder: 'Select status', searchPlaceholder: 'Search Status', emptyMessage: 'No matching statuses found.', getValue: s => s.status, options: SITE_STATUSES, chipLabeled: false, control: 'picklist' },
     { key: 'type', label: 'Site Type', placeholder: 'Select site type', searchPlaceholder: 'Search Site Type', emptyMessage: 'No matching site types found.', getValue: s => s.type, options: SITE_TYPES },
     { key: 'region', label: 'Region', placeholder: 'Select region', searchPlaceholder: 'Search Region', emptyMessage: 'No matching regions found.', getValue: s => s.region, options: SITE_REGIONS },
     { key: 'carrier', label: 'Carrier', placeholder: 'Select carrier', searchPlaceholder: 'Search Carrier', emptyMessage: 'No matching carriers found.', getValue: s => s.carrier, options: SITE_CARRIERS },
@@ -156,7 +158,7 @@ export const PROJECTS_CONFIG: ListConfig<Project> = {
     project.type, project.region, project.programManager, project.priority,
   ],
   filterFields: [
-    { key: 'status', label: 'Project Status', placeholder: 'Select status', searchPlaceholder: 'Search Status', emptyMessage: 'No matching statuses found.', getValue: p => p.status, options: PROJECT_STATUSES, chipLabeled: false },
+    { key: 'status', label: 'Project Status', placeholder: 'Select status', searchPlaceholder: 'Search Status', emptyMessage: 'No matching statuses found.', getValue: p => p.status, options: PROJECT_STATUSES, chipLabeled: false, control: 'picklist' },
     { key: 'type', label: 'Project Type', placeholder: 'Select project type', searchPlaceholder: 'Search Project Type', emptyMessage: 'No matching project types found.', getValue: p => p.type, options: PROJECT_TYPES },
     { key: 'template', label: 'Project Template', placeholder: 'Select project template', searchPlaceholder: 'Search Project Template', emptyMessage: 'No matching project templates found.', getValue: p => p.templateName, options: PROJECT_TEMPLATES },
     { key: 'site', label: 'Site', placeholder: 'Select site', searchPlaceholder: 'Search Site', emptyMessage: 'No matching sites found.', getValue: p => p.siteName, options: PROJECT_SITE_NAMES },
