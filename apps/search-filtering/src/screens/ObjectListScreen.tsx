@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { colors } from '../theme';
+import { FilterX, SearchX } from 'lucide-react';
+import { colors, radii } from '../theme';
 import { TopBar } from '../components/TopBar';
 import { SearchBar } from '../components/SearchBar';
 import { SearchHistoryPanel } from '../components/SearchHistoryPanel';
@@ -7,7 +8,6 @@ import { ActiveFilterChips } from '../components/ActiveFilterChips';
 import { FilterSuggestionBar } from '../components/FilterSuggestionBar';
 import { FilterBottomSheet } from '../components/FilterBottomSheet';
 import { SaveFilterModal } from '../components/SaveFilterModal';
-import { SavedFilterActionsMenu } from '../components/SavedFilterActionsMenu';
 import { ObjectCard } from '../components/ObjectCard';
 import { BottomNav } from '../components/BottomNav';
 import {
@@ -37,11 +37,12 @@ import {
   loadSavedFilters,
   saveSavedFilters,
 } from '../utils/savedFilters';
-import type { ActiveTab, FilterSuggestion, FilterValues } from '../types';
+import type { ActiveTab, FilterSuggestion, FilterValues, Variant } from '../types';
 import type { ListConfig } from '../config/listConfigs';
 
 interface ObjectListScreenProps<T> {
   config: ListConfig<T>;
+  variant: Variant;
   activeTab: ActiveTab;
   onAction: (action: string) => void;
 }
@@ -55,7 +56,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
-export function ObjectListScreen<T>({ config, activeTab, onAction }: ObjectListScreenProps<T>) {
+export function ObjectListScreen<T>({ config, variant, activeTab, onAction }: ObjectListScreenProps<T>) {
   const [filters, setFilters] = useState<FilterValues>(() => emptyFilters(config));
   const [sheetOpen, setSheetOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -64,11 +65,9 @@ export function ObjectListScreen<T>({ config, activeTab, onAction }: ObjectListS
   const [recentlyViewed, setRecentlyViewed] = useState(() => loadRecentlyViewed(config.storagePrefix));
   const [savedFilters, setSavedFilters] = useState(() => loadSavedFilters(config.storagePrefix));
   const [saveModalOpen, setSaveModalOpen] = useState(false);
-  const [saveModalInitialName, setSaveModalInitialName] = useState('');
-  const [saveModalMode, setSaveModalMode] = useState<'create' | 'rename'>('create');
-  const [editingFilterId, setEditingFilterId] = useState<string | null>(null);
-  const [actionsMenuFilterId, setActionsMenuFilterId] = useState<string | null>(null);
   const searchAreaRef = useRef<HTMLDivElement>(null);
+  const listScrollRef = useRef<HTMLDivElement>(null);
+  const listScrollTopRef = useRef(0);
 
   const debouncedQuery = useDebounce(query, 200);
   const activeFilterCount = countFilters(config, filters);
@@ -141,22 +140,13 @@ export function ObjectListScreen<T>({ config, activeTab, onAction }: ObjectListS
   }, []);
 
   const handleOpenSaveModal = useCallback(() => {
-    setSaveModalMode('create');
-    setSaveModalInitialName('');
     setSaveModalOpen(true);
   }, []);
 
   const handleSaveFilter = useCallback((name: string) => {
-    if (saveModalMode === 'rename' && editingFilterId) {
-      setSavedFilters(prev => prev.map(item => (
-        item.id === editingFilterId ? { ...item, name, updatedAt: Date.now() } : item
-      )));
-    } else {
-      setSavedFilters(prev => [createSavedFilter(name, filters), ...prev]);
-    }
+    setSavedFilters(prev => [createSavedFilter(name, filters), ...prev]);
     setSaveModalOpen(false);
-    setEditingFilterId(null);
-  }, [editingFilterId, filters, saveModalMode]);
+  }, [filters]);
 
   const handleSavedFilterSelect = useCallback((id: string) => {
     const saved = savedFilters.find(item => item.id === id);
@@ -165,34 +155,26 @@ export function ObjectListScreen<T>({ config, activeTab, onAction }: ObjectListS
     setSearchFocused(false);
   }, [savedFilters]);
 
-  const handleSavedFilterMenu = useCallback((id: string) => setActionsMenuFilterId(id), []);
+  const openFilterSheet = useCallback(() => {
+    const scroller = listScrollRef.current;
+    if (scroller) listScrollTopRef.current = scroller.scrollTop;
+    // Avoid focus-driven scroll jumps when the sheet mounts over the list.
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    setSheetOpen(true);
+  }, []);
 
-  const handleRenameSavedFilter = useCallback(() => {
-    if (!actionsMenuFilterId) return;
-    const saved = savedFilters.find(item => item.id === actionsMenuFilterId);
-    if (!saved) return;
-    setEditingFilterId(actionsMenuFilterId);
-    setSaveModalMode('rename');
-    setSaveModalInitialName(saved.name);
-    setActionsMenuFilterId(null);
-    setSaveModalOpen(true);
-  }, [actionsMenuFilterId, savedFilters]);
+  const closeFilterSheet = useCallback(() => {
+    setSheetOpen(false);
+  }, []);
 
-  const handleReplaceSavedFilter = useCallback(() => {
-    if (!actionsMenuFilterId || activeFilterCount === 0) return;
-    setSavedFilters(prev => prev.map(item => (
-      item.id === actionsMenuFilterId
-        ? { ...item, filters: cloneFilters(filters), updatedAt: Date.now() }
-        : item
-    )));
-    setActionsMenuFilterId(null);
-  }, [actionsMenuFilterId, activeFilterCount, filters]);
-
-  const handleDeleteSavedFilter = useCallback(() => {
-    if (!actionsMenuFilterId) return;
-    setSavedFilters(prev => prev.filter(item => item.id !== actionsMenuFilterId));
-    setActionsMenuFilterId(null);
-  }, [actionsMenuFilterId]);
+  useEffect(() => {
+    const scroller = listScrollRef.current;
+    if (!scroller) return;
+    // Keep scroll position stable across overflow lock/unlock when the sheet opens.
+    scroller.scrollTop = listScrollTopRef.current;
+  }, [sheetOpen]);
 
   return (
     <div style={{
@@ -200,8 +182,17 @@ export function ObjectListScreen<T>({ config, activeTab, onAction }: ObjectListS
       background: colors.background, position: 'relative', overflow: 'hidden',
     }}>
       <TopBar title={config.title} onBack={() => onAction('back')} showDropdown showPlus />
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        <div ref={searchAreaRef} onBlur={handleSearchBlur}>
+      <div
+        ref={listScrollRef}
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: sheetOpen ? 'hidden' : 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <div ref={searchAreaRef} onBlur={handleSearchBlur} style={{ flexShrink: 0 }}>
           <SearchBar
             placeholder={config.searchPlaceholder}
             query={query}
@@ -210,17 +201,14 @@ export function ObjectListScreen<T>({ config, activeTab, onAction }: ObjectListS
             onClose={handleSearchClose}
             focused={searchFocused}
             activeFilterCount={activeFilterCount}
-            onFilterClick={() => setSheetOpen(true)}
+            onFilterClick={openFilterSheet}
           />
           {showSearchHistory && (
             <div style={{ marginTop: 12 }}>
               <SearchHistoryPanel
                 config={config}
-                savedFilters={savedFilters}
                 recentSearches={recentSearches}
                 recentlyViewed={resolvedRecentlyViewed}
-                onSavedFilterSelect={handleSavedFilterSelect}
-                onSavedFilterMenu={handleSavedFilterMenu}
                 onRecentSearchSelect={handleRecentSelect}
                 onClearRecentSearches={handleClearRecentSearches}
                 onRecentlyViewedSelect={handleItemOpen}
@@ -230,32 +218,161 @@ export function ObjectListScreen<T>({ config, activeTab, onAction }: ObjectListS
         </div>
 
         {!showSearchHistory && isTyping && (
-          <FilterSuggestionBar
-            suggestions={filterSuggestions}
-            highlightQuery={debouncedQuery}
-            onApply={handleApplyFilterSuggestion}
-          />
+          <div style={{ flexShrink: 0 }}>
+            <FilterSuggestionBar
+              suggestions={filterSuggestions}
+              highlightQuery={debouncedQuery}
+              onApply={handleApplyFilterSuggestion}
+            />
+          </div>
         )}
 
-        <ActiveFilterChips
-          chips={activeChips}
-          onRemove={handleRemoveChip}
-          highlightQuery={debouncedQuery}
-          resultCount={activeFilterCount > 0 ? visibleItems.length : undefined}
-        />
+        <div style={{ flexShrink: 0 }}>
+          <ActiveFilterChips
+            chips={activeChips}
+            onRemove={handleRemoveChip}
+            highlightQuery={debouncedQuery}
+            resultCount={activeFilterCount > 0 ? visibleItems.length : undefined}
+          />
+        </div>
 
         {!showSearchHistory && (
           <div
             className={isTyping ? 'search-panel-view search-panel-view--visible' : undefined}
             style={{
-              display: 'flex', flexDirection: 'column', gap: 8,
+              flex: 1,
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
               padding: activeChips.length > 0 ? '12px 16px 16px' : '0 16px 16px',
+              justifyContent: visibleItems.length === 0 ? 'center' : 'flex-start',
             }}
           >
             {visibleItems.length === 0 ? (
-              <div style={{ padding: '32px 16px', textAlign: 'center', fontSize: 14, color: colors.textTertiary }}>
-                No {config.nounPlural} match your search.
-              </div>
+              activeFilterCount > 0 ? (
+                <div style={{
+                  padding: '24px 16px 40px',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 20,
+                  width: '100%',
+                }}>
+                  <div style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: '50%',
+                    background: colors.brandTealLight,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <FilterX size={28} color={colors.brandTeal} strokeWidth={1.75} />
+                  </div>
+                  <div style={{ maxWidth: 260 }}>
+                    <div style={{
+                      fontSize: 17,
+                      fontWeight: 600,
+                      color: colors.textPrimary,
+                      marginBottom: 8,
+                      lineHeight: 1.3,
+                    }}>
+                      No {config.nounPlural} found
+                    </div>
+                    <div style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      lineHeight: 1.45,
+                    }}>
+                      Remove or change filters to see results.
+                    </div>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'stretch',
+                    gap: 10,
+                    width: '100%',
+                    maxWidth: 280,
+                  }}>
+                    <button
+                      type="button"
+                      onClick={openFilterSheet}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: radii.pill,
+                        border: 'none',
+                        background: colors.brandTeal,
+                        color: '#fff',
+                        fontSize: 15,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Change Filters
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFilters(emptyFilters(config))}
+                      style={{
+                        width: '100%',
+                        padding: '8px 16px',
+                        border: 'none',
+                        background: 'none',
+                        color: colors.brandTeal,
+                        fontSize: 15,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Clear All Filters
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  padding: '24px 16px 40px',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 16,
+                  width: '100%',
+                }}>
+                  <div style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: '50%',
+                    background: colors.surfaceAlt,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <SearchX size={28} color={colors.textTertiary} strokeWidth={1.75} />
+                  </div>
+                  <div style={{ maxWidth: 260 }}>
+                    <div style={{
+                      fontSize: 17,
+                      fontWeight: 600,
+                      color: colors.textPrimary,
+                      marginBottom: 8,
+                      lineHeight: 1.3,
+                    }}>
+                      No {config.nounPlural} found
+                    </div>
+                    <div style={{
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      lineHeight: 1.45,
+                    }}>
+                      No {config.nounPlural} match your search.
+                    </div>
+                  </div>
+                </div>
+              )
             ) : (
               visibleItems.map(item => {
                 const id = config.getId(item);
@@ -276,34 +393,23 @@ export function ObjectListScreen<T>({ config, activeTab, onAction }: ObjectListS
 
       <FilterBottomSheet
         open={sheetOpen}
+        variant={variant}
         config={config}
         filters={filters}
         onChange={setFilters}
-        onClose={() => setSheetOpen(false)}
+        onClose={closeFilterSheet}
         onSaveFilter={handleOpenSaveModal}
+        savedFilters={savedFilters}
+        onSavedFilterSelect={handleSavedFilterSelect}
         activeFilterCount={activeFilterCount}
         highlightQuery={debouncedQuery}
       />
 
       <SaveFilterModal
         open={saveModalOpen}
-        initialName={saveModalInitialName}
         onSave={handleSaveFilter}
-        onCancel={() => {
-          setSaveModalOpen(false);
-          setEditingFilterId(null);
-        }}
+        onCancel={() => setSaveModalOpen(false)}
       />
-
-      {actionsMenuFilterId && !saveModalOpen && (
-        <SavedFilterActionsMenu
-          hasCurrentFilters={activeFilterCount > 0}
-          onRename={handleRenameSavedFilter}
-          onReplace={handleReplaceSavedFilter}
-          onDelete={handleDeleteSavedFilter}
-          onClose={() => setActionsMenuFilterId(null)}
-        />
-      )}
 
       <BottomNav activeTab={activeTab} onTabChange={(tab) => onAction(`tab-${tab}`)} />
     </div>

@@ -1,45 +1,13 @@
-import { History, MoreVertical, Star } from 'lucide-react';
+import { History } from 'lucide-react';
 import { colors } from '../theme';
-import type { FilterValues, SavedFilter } from '../types';
 import type { ListConfig } from '../config/listConfigs';
 import { inferRecentSearchLabel } from '../utils/recentSearches';
 import { formatViewedAgo } from '../utils/recentlyViewed';
 
-const MAX_SAVED_FILTER_LABELS = 2;
-
-function getSavedFilterLabels<T>(config: ListConfig<T>, filters: FilterValues): string[] {
-  const labels: string[] = [];
-  for (const field of config.filterFields) {
-    for (const value of filters[field.key] ?? []) {
-      labels.push(value);
-    }
-  }
-  return labels;
-}
-
-function SavedFilterSummaryText({ labels }: { labels: string[] }) {
-  if (labels.length === 0) return null;
-
-  const visible = labels.slice(0, MAX_SAVED_FILTER_LABELS);
-  const overflow = labels.length - visible.length;
-  const summary = overflow > 0
-    ? `${visible.join(' • ')} +${overflow}`
-    : visible.join(' • ');
-
-  return (
-    <div style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 1.4 }}>
-      {summary}
-    </div>
-  );
-}
-
 interface SearchHistoryPanelProps<T> {
   config: ListConfig<T>;
-  savedFilters: SavedFilter[];
   recentSearches: string[];
   recentlyViewed: { item: T; viewedAt: number }[];
-  onSavedFilterSelect: (id: string) => void;
-  onSavedFilterMenu: (id: string) => void;
   onRecentSearchSelect: (term: string) => void;
   onClearRecentSearches: () => void;
   onRecentlyViewedSelect: (id: string) => void;
@@ -51,16 +19,12 @@ const sectionLabelStyle: React.CSSProperties = {
 
 export function SearchHistoryPanel<T>({
   config,
-  savedFilters,
   recentSearches,
   recentlyViewed,
-  onSavedFilterSelect,
-  onSavedFilterMenu,
   onRecentSearchSelect,
   onClearRecentSearches,
   onRecentlyViewedSelect,
 }: SearchHistoryPanelProps<T>) {
-  const showSavedFilters = savedFilters.length > 0;
   const showRecentSearches = recentSearches.length > 0;
 
   return (
@@ -153,77 +117,6 @@ export function SearchHistoryPanel<T>({
             </button>
           );
         })
-      )}
-
-      {showSavedFilters && (
-        <>
-          <div style={{ borderBottom: `1px solid ${colors.borderLight}`, margin: '4px 0' }} />
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px 6px' }}>
-            <span style={sectionLabelStyle}>Saved Filters</span>
-          </div>
-
-          {savedFilters.map(saved => {
-            const chipLabels = getSavedFilterLabels(config, saved.filters);
-            return (
-              <div key={saved.id} style={{ padding: '10px 14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <button
-                    type="button"
-                    onPointerDown={e => e.preventDefault()}
-                    onClick={() => onSavedFilterSelect(saved.id)}
-                    className="search-result-row"
-                    style={{
-                      flex: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      minWidth: 0,
-                      textAlign: 'left',
-                      padding: 0,
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Star size={16} color={colors.brandTeal} fill={colors.brandTeal} style={{ flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600, color: colors.textPrimary, lineHeight: 1.3 }}>
-                      {saved.name}
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onPointerDown={e => e.preventDefault()}
-                    onClick={() => onSavedFilterMenu(saved.id)}
-                    aria-label={`Actions for ${saved.name}`}
-                    style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
-                  >
-                    <MoreVertical size={18} color={colors.textTertiary} />
-                  </button>
-                </div>
-                {chipLabels.length > 0 && (
-                  <button
-                    type="button"
-                    onPointerDown={e => e.preventDefault()}
-                    onClick={() => onSavedFilterSelect(saved.id)}
-                    className="search-result-row"
-                    style={{
-                      width: '100%',
-                      marginTop: 8,
-                      padding: 0,
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                    }}
-                  >
-                    <SavedFilterSummaryText labels={chipLabels} />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </>
       )}
     </div>
   );

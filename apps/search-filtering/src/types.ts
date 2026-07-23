@@ -1,6 +1,16 @@
 export type ScreenId = 'home' | 'menu' | 'all-jobs' | 'all-sites' | 'all-projects';
 export type ActiveTab = 'home' | 'map' | 'menu';
 
+/** Filter presentation variants for side-by-side design comparison. */
+export type Variant = 'full-page' | 'bottom-sheet';
+
+export const VARIANTS: Variant[] = ['full-page', 'bottom-sheet'];
+
+export const VARIANT_LABELS: Record<Variant, string> = {
+  'full-page': 'Full page',
+  'bottom-sheet': 'Bottom sheet',
+};
+
 export type ObjectType = 'job' | 'site' | 'project' | 'template';
 export type QuickFilterId = 'today' | 'overdue' | 'unassigned';
 export type Priority = 'High' | 'Medium' | 'Low';

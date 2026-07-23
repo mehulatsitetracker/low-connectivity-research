@@ -7,7 +7,7 @@ import { MenuScreen } from './screens/MenuScreen';
 import { ObjectListScreen } from './screens/ObjectListScreen';
 import { JOBS_CONFIG, SITES_CONFIG, PROJECTS_CONFIG } from './config/listConfigs';
 import { SCREENS } from './types';
-import type { AppState, ScreenId, ActiveTab } from './types';
+import type { AppState, ScreenId, ActiveTab, Variant } from './types';
 
 const INITIAL_STATE: AppState = {
   screen: 'home',
@@ -26,6 +26,7 @@ function indexToScreen(index: number): ScreenId {
 
 function App() {
   const [state, setState] = useState<AppState>(INITIAL_STATE);
+  const [variant, setVariant] = useState<Variant>('full-page');
 
   const navigateTo = useCallback((screen: ScreenId) => {
     setState(prev => ({
@@ -74,7 +75,9 @@ function App() {
 
   const { configuratorConfig } = useConfiguratorConfig({
     screenIndex: screenToIndex(state.screen === 'menu' ? 'home' : state.screen),
+    variant,
     onScreenChange: handleScreenChange,
+    onVariantChange: setVariant,
   });
 
   const renderScreen = () => {
@@ -86,11 +89,11 @@ function App() {
       // key forces a remount per object type so per-screen state (filters,
       // search, saved filters) never leaks when switching list screens directly.
       case 'all-jobs':
-        return <ObjectListScreen key="all-jobs" config={JOBS_CONFIG} activeTab={state.activeTab} onAction={handleAction} />;
+        return <ObjectListScreen key="all-jobs" config={JOBS_CONFIG} variant={variant} activeTab={state.activeTab} onAction={handleAction} />;
       case 'all-sites':
-        return <ObjectListScreen key="all-sites" config={SITES_CONFIG} activeTab={state.activeTab} onAction={handleAction} />;
+        return <ObjectListScreen key="all-sites" config={SITES_CONFIG} variant={variant} activeTab={state.activeTab} onAction={handleAction} />;
       case 'all-projects':
-        return <ObjectListScreen key="all-projects" config={PROJECTS_CONFIG} activeTab={state.activeTab} onAction={handleAction} />;
+        return <ObjectListScreen key="all-projects" config={PROJECTS_CONFIG} variant={variant} activeTab={state.activeTab} onAction={handleAction} />;
       default:
         return <HomeScreen activeTab={state.activeTab} onAction={handleAction} />;
     }

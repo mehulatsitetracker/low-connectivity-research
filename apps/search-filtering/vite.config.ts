@@ -5,6 +5,9 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   base: '/low-connectivity-research/search-filtering/',
+  server: {
+    host: true,
+  },
   resolve: {
     alias: {
       react: path.resolve(__dirname, '../../node_modules/react'),

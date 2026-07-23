@@ -1,14 +1,19 @@
-import { SCREENS } from '../types';
+import { SCREENS, VARIANTS, VARIANT_LABELS } from '../types';
+import type { Variant } from '../types';
 import type { ConfiguratorConfig, Category, FlowNode, FlowEdge } from 'configurator-ui';
 
 const MAIN_PATH_INDICES = [0, 1, 2, 3];
 
 export function useConfiguratorConfig({
   screenIndex,
+  variant,
   onScreenChange,
+  onVariantChange,
 }: {
   screenIndex: number;
+  variant: Variant;
   onScreenChange: (idx: number) => void;
+  onVariantChange: (v: Variant) => void;
 }): { configuratorConfig: ConfiguratorConfig } {
   const currentScreen = SCREENS[screenIndex];
 
@@ -26,6 +31,7 @@ export function useConfiguratorConfig({
     label: SCREENS[idx].name,
     category: 'List Screens',
     nodeType: 'screen' as const,
+    scenarios: VARIANTS,
   }));
 
   const flowEdges: FlowEdge[] = MAIN_PATH_INDICES.slice(0, -1).map((idx, i) => ({
@@ -38,11 +44,45 @@ export function useConfiguratorConfig({
     if (idx >= 0 && idx < SCREENS.length) onScreenChange(idx);
   };
 
+  const customControls = (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div>
+        <div style={{
+          fontSize: 10, fontWeight: 700, letterSpacing: '1.2px',
+          textTransform: 'uppercase', color: '#666', marginBottom: 6,
+        }}>
+          Filter presentation
+        </div>
+        <div style={{ fontSize: 10, color: '#555', marginBottom: 8, lineHeight: 1.4 }}>
+          Compare full-page filters vs a peek bottom sheet.
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {VARIANTS.map(v => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => onVariantChange(v)}
+              style={{
+                padding: '7px 10px', borderRadius: 6, fontSize: 12, textAlign: 'left',
+                border: variant === v ? '1px solid #00847C' : '1px solid transparent',
+                background: variant === v ? 'rgba(0,132,124,0.15)' : 'transparent',
+                color: variant === v ? '#fff' : '#888',
+                cursor: 'pointer', fontFamily: 'inherit', fontWeight: variant === v ? 500 : 400,
+              }}
+            >
+              {VARIANT_LABELS[v]}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   const configuratorConfig: ConfiguratorConfig = {
     branding: {
       streamLabel: 'SEARCH & FILTERING',
       title: currentScreen.name,
-      description: 'Explore search and filter patterns across list screens',
+      description: `${VARIANT_LABELS[variant]} filters — compare presentations`,
     },
     categories,
     reference: {
@@ -50,6 +90,7 @@ export function useConfiguratorConfig({
       flowNodes,
       flowEdges,
     },
+    customControls,
     activeStepId: `screen-${screenIndex}`,
     onStepSelect: handleStepSelect,
   };
