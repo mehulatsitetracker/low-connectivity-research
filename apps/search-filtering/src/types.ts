@@ -1,4 +1,4 @@
-export type ScreenId = 'home' | 'menu' | 'all-jobs' | 'all-sites' | 'all-projects';
+export type ScreenId = 'home' | 'menu' | 'all-jobs' | 'all-sites' | 'all-projects' | 'admin-search-indexing';
 export type ActiveTab = 'home' | 'map' | 'menu';
 
 /** Filter presentation variants for side-by-side design comparison. */

@@ -1,12 +1,13 @@
 import { useState, useCallback } from 'react';
 import { ConfiguratorLayout } from 'configurator-ui';
 import { MobileFrame } from './components/MobileFrame';
+import { BrowserFrame } from './components/BrowserFrame';
 import { useConfiguratorConfig } from './hooks/useConfiguratorConfig';
 import { HomeScreen } from './screens/HomeScreen';
 import { MenuScreen } from './screens/MenuScreen';
 import { ObjectListScreen } from './screens/ObjectListScreen';
+import { AdminSearchIndexingScreen } from './screens/AdminSearchIndexingScreen';
 import { JOBS_CONFIG, SITES_CONFIG, PROJECTS_CONFIG } from './config/listConfigs';
-import { SCREENS } from './types';
 import type { AppState, ScreenId, ActiveTab, Variant } from './types';
 
 const INITIAL_STATE: AppState = {
@@ -14,15 +15,6 @@ const INITIAL_STATE: AppState = {
   activeTab: 'home',
   screenHistory: [],
 };
-
-function screenToIndex(screen: ScreenId): number {
-  const idx = SCREENS.findIndex(s => s.id === screen);
-  return idx >= 0 ? idx : 0;
-}
-
-function indexToScreen(index: number): ScreenId {
-  return SCREENS[index]?.id ?? 'home';
-}
 
 function App() {
   const [state, setState] = useState<AppState>(INITIAL_STATE);
@@ -63,8 +55,9 @@ function App() {
     }
   }, [goBack, navigateTo]);
 
-  const handleScreenChange = useCallback((index: number) => {
-    const screen = indexToScreen(index);
+  // Configurator sidebar / diagram selection: jump straight to a screen and
+  // reset the in-app back stack.
+  const handleScreenSelect = useCallback((screen: ScreenId) => {
     setState(prev => ({
       ...prev,
       screen,
@@ -74,9 +67,9 @@ function App() {
   }, []);
 
   const { configuratorConfig } = useConfiguratorConfig({
-    screenIndex: screenToIndex(state.screen === 'menu' ? 'home' : state.screen),
+    activeScreen: state.screen,
     variant,
-    onScreenChange: handleScreenChange,
+    onScreenSelect: handleScreenSelect,
     onVariantChange: setVariant,
   });
 
@@ -94,16 +87,24 @@ function App() {
         return <ObjectListScreen key="all-sites" config={SITES_CONFIG} variant={variant} activeTab={state.activeTab} onAction={handleAction} />;
       case 'all-projects':
         return <ObjectListScreen key="all-projects" config={PROJECTS_CONFIG} variant={variant} activeTab={state.activeTab} onAction={handleAction} />;
+      case 'admin-search-indexing':
+        return <AdminSearchIndexingScreen />;
       default:
         return <HomeScreen activeTab={state.activeTab} onAction={handleAction} />;
     }
   };
 
+  // Mobile screens render in a phone; the admin / web screen renders in a
+  // desktop browser window instead.
+  const isAdmin = state.screen === 'admin-search-indexing';
+
   return (
     <ConfiguratorLayout config={configuratorConfig}>
-      <MobileFrame>
-        {renderScreen()}
-      </MobileFrame>
+      {isAdmin ? (
+        <BrowserFrame>{renderScreen()}</BrowserFrame>
+      ) : (
+        <MobileFrame>{renderScreen()}</MobileFrame>
+      )}
     </ConfiguratorLayout>
   );
 }
