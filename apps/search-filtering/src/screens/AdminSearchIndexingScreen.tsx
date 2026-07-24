@@ -113,9 +113,6 @@ export function AdminSearchIndexingScreen() {
   );
   const [modal, setModal] = useState<ModalState>(null);
 
-  const toggleIndexed = (id: string) =>
-    setFields((prev) => prev.map((f) => (f.id === id ? { ...f, indexed: !f.indexed } : f)));
-
   const handleSave = (field: SearchIndexField) => {
     setFields((prev) => {
       const exists = prev.some((f) => f.id === field.id);
@@ -125,7 +122,7 @@ export function AdminSearchIndexingScreen() {
   };
 
   const handleDelete = (field: SearchIndexField) => {
-    if (window.confirm(`Remove "${field.fieldLabel}" from search indexing?`)) {
+    if (window.confirm(`Remove "${field.filterName}" from search indexing?`)) {
       setFields((prev) => prev.filter((f) => f.id !== field.id));
     }
   };
@@ -283,10 +280,9 @@ export function AdminSearchIndexingScreen() {
               <thead>
                 <tr>
                   <th style={{ ...th, width: 90 }}>Action</th>
-                  <th style={th}>Field Label</th>
+                  <th style={th}>Filter Name</th>
                   <th style={th}>Field API Name</th>
                   <th style={th}>Data Type</th>
-                  <th style={{ ...th, width: 90, textAlign: 'center' }}>Indexed</th>
                 </tr>
               </thead>
               <tbody>
@@ -297,25 +293,16 @@ export function AdminSearchIndexingScreen() {
                       <span style={{ color: sf.textMuted }}> | </span>
                       <span style={link} onClick={() => handleDelete(f)}>Del</span>
                     </td>
-                    <td style={cell}>{f.fieldLabel}</td>
+                    <td style={cell}>{f.filterName}</td>
                     <td style={{ ...cell, color: sf.textMuted, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12 }}>
                       {f.fieldApiName}
                     </td>
-                    <td style={cell}>{f.fieldType}</td>
-                    <td style={{ ...cell, textAlign: 'center' }}>
-                      <input
-                        type="checkbox"
-                        checked={f.indexed}
-                        onChange={() => toggleIndexed(f.id)}
-                        aria-label={`Indexed for ${f.fieldLabel}`}
-                        style={{ margin: 0, width: 15, height: 15, accentColor: sf.brand, cursor: 'pointer' }}
-                      />
-                    </td>
+                    <td style={{ ...cell, color: f.fieldType ? sf.text : sf.textMuted }}>{f.fieldType ?? '—'}</td>
                   </tr>
                 ))}
                 {fields.length === 0 && (
                   <tr>
-                    <td colSpan={5} style={{ ...cell, textAlign: 'center', color: sf.textMuted, padding: '22px 10px' }}>
+                    <td colSpan={4} style={{ ...cell, textAlign: 'center', color: sf.textMuted, padding: '22px 10px' }}>
                       No indexed fields yet. Click <strong>New</strong> to add one.
                     </td>
                   </tr>

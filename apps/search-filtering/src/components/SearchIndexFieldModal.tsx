@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import type React from 'react';
 import { X } from 'lucide-react';
 import { sf } from '../adminTheme';
-import { SEARCH_INDEX_OBJECTS, FIELD_TYPES } from '../data/searchIndexConfig';
-import type { SearchIndexField, SearchIndexObject, FieldType } from '../data/searchIndexConfig';
+import { SEARCH_INDEX_OBJECTS } from '../data/searchIndexConfig';
+import type { SearchIndexField, SearchIndexObject } from '../data/searchIndexConfig';
 
 interface Props {
   mode: 'new' | 'edit';
@@ -28,10 +28,8 @@ function Required() {
 
 export function SearchIndexFieldModal({ mode, initial, defaultObject, onCancel, onSave }: Props) {
   const [object, setObject] = useState<SearchIndexObject>(initial?.object ?? defaultObject ?? 'Job');
-  const [fieldLabel, setFieldLabel] = useState(initial?.fieldLabel ?? '');
+  const [filterName, setFilterName] = useState(initial?.filterName ?? '');
   const [fieldApiName, setFieldApiName] = useState(initial?.fieldApiName ?? '');
-  const [fieldType, setFieldType] = useState<FieldType>(initial?.fieldType ?? 'Text');
-  const [indexed, setIndexed] = useState(initial?.indexed ?? true);
   const [touched, setTouched] = useState(false);
 
   useEffect(() => {
@@ -40,9 +38,9 @@ export function SearchIndexFieldModal({ mode, initial, defaultObject, onCancel, 
     return () => window.removeEventListener('keydown', onKey);
   }, [onCancel]);
 
-  const labelValid = fieldLabel.trim().length > 0;
+  const nameValid = filterName.trim().length > 0;
   const apiValid = fieldApiName.trim().length > 0;
-  const canSave = labelValid && apiValid;
+  const canSave = nameValid && apiValid;
 
   const handleSave = () => {
     setTouched(true);
@@ -50,10 +48,9 @@ export function SearchIndexFieldModal({ mode, initial, defaultObject, onCancel, 
     onSave({
       id: initial?.id ?? `idx-${Date.now()}`,
       object,
-      fieldLabel: fieldLabel.trim(),
+      filterName: filterName.trim(),
       fieldApiName: fieldApiName.trim(),
-      fieldType,
-      indexed,
+      fieldType: initial?.fieldType, // decided by the field's API definition
       order: initial?.order ?? 99,
     });
   };
@@ -117,14 +114,14 @@ export function SearchIndexFieldModal({ mode, initial, defaultObject, onCancel, 
           </div>
 
           <div>
-            <label style={labelStyle}>Field Label<Required /></label>
+            <label style={labelStyle}>Filter Name<Required /></label>
             <input
-              value={fieldLabel}
-              onChange={(e) => setFieldLabel(e.target.value)}
-              placeholder="e.g. Job Status"
-              style={{ ...inputStyle, borderColor: touched && !labelValid ? sf.required : sf.border }}
+              value={filterName}
+              onChange={(e) => setFilterName(e.target.value)}
+              placeholder="e.g. Status"
+              style={{ ...inputStyle, borderColor: touched && !nameValid ? sf.required : sf.border }}
             />
-            {touched && !labelValid && errorText('Field Label is required.')}
+            {touched && !nameValid && errorText('Filter Name is required.')}
           </div>
 
           <div>
@@ -135,31 +132,10 @@ export function SearchIndexFieldModal({ mode, initial, defaultObject, onCancel, 
               placeholder="e.g. sitetracker__Status__c"
               style={{ ...inputStyle, borderColor: touched && !apiValid ? sf.required : sf.border, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}
             />
-            {touched && !apiValid && errorText('Field API Name is required.')}
+            {touched && !apiValid
+              ? errorText('Field API Name is required.')
+              : <div style={{ fontSize: 11, color: sf.textMuted, marginTop: 4 }}>Paste the exact API name from the field's definition. Its data type is read from the API.</div>}
           </div>
-
-          <div>
-            <label style={labelStyle}>Data Type</label>
-            <select
-              value={fieldType}
-              onChange={(e) => setFieldType(e.target.value as FieldType)}
-              style={inputStyle}
-            >
-              {FIELD_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-
-          <div style={{ height: 1, background: sf.borderLight, margin: '2px 0' }} />
-
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
-            <input type="checkbox" checked={indexed} onChange={(e) => setIndexed(e.target.checked)} style={{ marginTop: 2, width: 15, height: 15, accentColor: sf.brand }} />
-            <span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: sf.text }}>Indexed</span>
-              <span style={{ display: 'block', fontSize: 11.5, color: sf.textMuted, lineHeight: 1.4 }}>
-                Include this field in the mobile global search index and offer it as a filter in the list views.
-              </span>
-            </span>
-          </label>
         </div>
 
         {/* Footer */}
